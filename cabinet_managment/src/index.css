@@ -1,0 +1,112 @@
+/* Tailwind v4: @import must be first; then @config loads tailwind.config.js (darkMode, content) */
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Card entrance */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.auth-card {
+  animation: fadeInUp 0.25s ease-out;
+}
+
+.auth-shell-enter {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+/* White form panel on auth split layout */
+.auth-form-panel {
+  border-radius: 1.5rem;
+  border: 1px solid rgb(0 0 0 / 0.06);
+  background: #fff;
+  box-shadow:
+    0 25px 50px -12px rgb(15 61 47 / 0.07),
+    0 12px 24px -10px rgb(0 0 0 / 0.06);
+}
+
+.dark .auth-form-panel {
+  border-color: rgb(51 65 85 / 0.6);
+  background: rgb(30 41 59);
+  box-shadow: none;
+}
+
+/* OTP shake on error */
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-6px);
+  }
+  40% {
+    transform: translateX(6px);
+  }
+  60% {
+    transform: translateX(-4px);
+  }
+  80% {
+    transform: translateX(4px);
+  }
+}
+
+.otp-error {
+  animation: shake 0.4s ease-out;
+}
+
+/* Pulsing dot for pending timeline */
+@keyframes timeline-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.65;
+    transform: scale(0.92);
+  }
+}
+
+.pulse-dot {
+  animation: timeline-pulse 1.5s ease-in-out infinite;
+}
+
+/* Input focus transition */
+input,
+select {
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+
+/* Button press */
+button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+/* Role card hover */
+.role-card {
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    box-shadow 0.15s,
+    transform 0.1s;
+}
+
+.role-card:hover {
+  transform: translateY(-1px);
+}
+
