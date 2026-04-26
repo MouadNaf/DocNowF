@@ -26,6 +26,13 @@ export interface SecretaryCreatePayload {
   phone_number: string;
 }
 
+export interface Availability {
+  id: number;
+  day_of_week: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+  start_time: string;
+  end_time: string;
+}
+
 export const doctorService = {
   async getSecretaries(): Promise<any> {
     const res = await api.get('private-cabinets/secretaries');
@@ -60,5 +67,36 @@ export const doctorService = {
   async updateCabinet(id: number, payload: any) {
     const res = await api.put(`private-cabinets/${id}`, payload);
     return res.data;
-  }
+  },
+
+  async getAvailabilities() {
+    const res = await api.get('private-cabinets/availabilities');
+    return res.data;
+  },
+
+  async createAvailability(payload: {
+    day_of_week: Availability['day_of_week'];
+    start_time: string;
+    end_time: string;
+  }) {
+    const res = await api.post('private-cabinets/availabilities', payload);
+    return res.data;
+  },
+
+  async updateAvailability(
+    id: number,
+    payload: Partial<{
+      day_of_week: Availability['day_of_week'];
+      start_time: string;
+      end_time: string;
+    }>
+  ) {
+    const res = await api.put(`private-cabinets/availabilities/${id}`, payload);
+    return res.data;
+  },
+
+  async deleteAvailability(id: number) {
+    const res = await api.delete(`private-cabinets/availabilities/${id}`);
+    return res.data;
+  },
 };
