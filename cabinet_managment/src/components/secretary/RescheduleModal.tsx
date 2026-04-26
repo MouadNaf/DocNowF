@@ -1,66 +1,32 @@
-import { useState } from 'react';
-import { X } from 'lucide-react';
-import { useAppointmentStore } from '@/store/appointment.store';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import type { Appointment } from '@/types/secretary.types';
+﻿import { useState } from 'react'
+import { rescheduleAppointment } from '@/lib/api/secretary'
+import type { Appointment } from '@/types/secretary.types'
 
-interface Props {
-  appointment: Appointment;
-  onClose: () => void;
-}
+type Props = { id?: string; appointment?: Appointment; onClose: () => void }
 
-export function RescheduleModal({ appointment, onClose }: Props) {
-  const reschedule = useAppointmentStore((s) => s.reschedule);
-  const [date, setDate] = useState(appointment.date);
-  const [time, setTime] = useState(appointment.time);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    reschedule(appointment.id, date, time);
-    onClose();
-  };
-
+export function RescheduleModal({ id, appointment, onClose }: Props) {
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
+  const [time, setTime] = useState('10:30')
+  const [loading, setLoading] = useState(false)
+  const submit = async () => {
+    const targetId = id ?? appointment?.id
+    if (!targetId) return
+    setLoading(true)
+    await rescheduleAppointment(targetId, `${date}T${time}:00`)
+    setLoading(false)
+    onClose()
+  }
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
-    >
-      <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-gray-900">Replanifier</h2>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition"
-          >
-            <X size={18} />
-          </button>
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50" onClick={onClose}>
+      <div className="bg-white rounded-2xl p-4 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+        <h3 className="font-semibold mb-3">Reporter le rendez-vous</h3>
+        <div className="grid grid-cols-2 gap-2 mb-3">
+          <input type="date" className="border rounded-lg p-2" value={date} onChange={(e) => setDate(e.target.value)} />
+          <input type="time" className="border rounded-lg p-2" value={time} onChange={(e) => setTime(e.target.value)} />
         </div>
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <Input
-              label="Nouvelle date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              required
-            />
-            <Input
-              label="Nouvelle heure"
-              type="time"
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-              required
-            />
-          </div>
-          <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Annuler
-            </Button>
-            <Button type="submit">Replanifier</Button>
-          </div>
-        </form>
+        <button className="w-full h-10 bg-[#1D9E75] text-white rounded-lg" onClick={submit} disabled={loading}>{loading ? 'Chargement...' : 'Confirmer le report'}</button>
       </div>
     </div>
-  );
+  )
 }
+

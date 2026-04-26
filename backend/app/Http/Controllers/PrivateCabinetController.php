@@ -51,6 +51,8 @@ class PrivateCabinetController extends Controller
             'documents.*'=>'file|mimes:pdf,jpg,jpeg,png|max:5120',
             'slot_duration'=>'nullable|integer|min:5|max:120',
             'consultation_price'=>'nullable|numeric|min:0',
+            'follow_up_price'=>'nullable|numeric|min:0',
+            'bio'=>'nullable|string',
         ]);
         $doctor = Auth::user()->doctor;
         if($doctor->privateCabinet){
@@ -77,10 +79,12 @@ class PrivateCabinetController extends Controller
                 'latitude' => $request->latitude,
                 'longitude' => $request->longitude,
                 'is_active' => true,
-                'is_verified' => false,
+                'is_verified' => true,
                 'documents' => $storeDocuments($request->file('documents')),
                 'slot_duration' => $request->slot_duration ?? 30,
                 'consultation_price' => $request->consultation_price ?? null,
+                'follow_up_price' => $request->follow_up_price ?? null,
+                'bio' => $request->bio,
             ]);
         });
 
@@ -102,6 +106,8 @@ class PrivateCabinetController extends Controller
         'longitude' => 'sometimes|numeric|between:-180,180',
         'slot_duration' => 'sometimes|integer|min:5|max:120',
         'consultation_price' => 'sometimes|numeric|min:0',
+        'follow_up_price' => 'sometimes|numeric|min:0',
+        'bio' => 'sometimes|string',
     ]);
 
     $doctor = Auth::user()->doctor;
@@ -111,7 +117,7 @@ class PrivateCabinetController extends Controller
 
     // Only update safe fields
     $privateCabinet->update($request->only([
-        'name', 'city', 'address', 'latitude', 'longitude', 'slot_duration', 'consultation_price'
+        'name', 'city', 'address', 'latitude', 'longitude', 'slot_duration', 'consultation_price', 'follow_up_price', 'bio'
     ]));
 
     return response()->json([
@@ -186,7 +192,7 @@ public function getSecretaries()
         return response()->json(['message' => 'Private cabinet not found'], 404);
     }
 
-    $secretaries = $cabinet->secretaries()->with('user')->get();
+    $secretaries = $doctor->secretaries()->with('user')->get();
 
     return response()->json([
         'success' => true,
@@ -501,9 +507,9 @@ public function createSecretary(Request $request)
             'role' => 'secretary',
             'gender' => $request->gender,
             'phone_number' => trim($request->phone_number),
-            'address' => $request->address,
-            'city' => $request->city,
-            'date_of_birth' => $request->date_of_birth,
+            'address' => $request->address ?? $doctor->user->address ?? 'N/A',
+            'city' => $request->city ?? $doctor->user->city ?? 'N/A',
+            'date_of_birth' => $request->date_of_birth ?? now()->format('Y-m-d'),
         ]);
 
         // 2. Create secretary profile linked to the doctor
@@ -530,9 +536,7 @@ public function deleteSecretary($id)
         ], 404);
     }
 
-    $cabinet = $doctor->privateCabinet;
-
-    $secretary = $cabinet->secretaries()->find($id);
+    $secretary = $doctor->secretaries()->find($id);
 
     if (!$secretary) {
         return response()->json([

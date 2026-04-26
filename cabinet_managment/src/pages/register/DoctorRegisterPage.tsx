@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/Input'
 import { PasswordInput } from '@/components/ui/PasswordInput'
 import { PasswordStrength } from '@/components/ui/PasswordStrength'
 import { Select } from '@/components/ui/Select'
+import { WILAYAS } from '@/constants/algeria'
 import { MEDICAL_SPECIALITY_OPTIONS, MEDICAL_SPECIALITY_SLUGS } from '@/constants/medical-specialities'
 import { ROUTES } from '@/constants/routes'
 import { authService } from '@/services/auth.service'
@@ -32,6 +33,10 @@ const schema = z.object({
     .refine((s) => MEDICAL_SPECIALITY_SLUGS.has(s), { message: 'Select a valid speciality' }),
   password: z.string().min(8).regex(/[A-Z]/).regex(/\d/),
   confirmPassword: z.string(),
+  gender: z.enum(['male', 'female']),
+  city: z.string().min(1, 'City is required'),
+  address: z.string().min(5, 'Address is required'),
+  date_of_birth: z.string().min(1, 'Date of birth is required'),
   agreedToTerms: z.literal(true),
 }).refine((d) => d.confirmPassword === d.password, { path: ['confirmPassword'], message: 'Passwords do not match' })
 type FormValues = z.infer<typeof schema>
@@ -71,15 +76,15 @@ export function DoctorRegisterPage() {
       setRole('doctor')
       setDoctorType('doctor_only')
       navigate(`${ROUTES.PENDING}?role=doctor`)
-    } catch (e) {
-      setApiError((e as Error).message)
+    } catch (e: any) {
+      setApiError(e.response?.data?.message || (e as Error).message)
     }
   }
 
   const goNext = async () => {
     setApiError('')
     if (step === 1) {
-      const ok = await trigger(['firstName', 'lastName', 'email', 'phone', 'speciality'])
+      const ok = await trigger(['firstName', 'lastName', 'email', 'phone', 'speciality', 'gender', 'date_of_birth', 'city', 'address'])
       if (ok) setStep(2)
       return
     }
@@ -145,11 +150,34 @@ export function DoctorRegisterPage() {
               <Input label="First name" error={errors.firstName?.message} {...register('firstName')} />
               <Input label="Last name" error={errors.lastName?.message} {...register('lastName')} />
             </div>
-            <Input label="Email address" icon={<Mail className="h-4 w-4" />} placeholder="you@example.com" error={errors.email?.message} {...register('email')} />
-            <div>
-              <Input label="Phone number" icon={<Phone className="h-4 w-4" />} error={errors.phone?.message} {...register('phone')} />
-              <p className="mt-1 text-xs text-gray-400 dark:text-slate-500">+213 prefix added automatically</p>
+            
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Select
+                label="Gender"
+                options={[
+                  { value: 'male', label: 'Male' },
+                  { value: 'female', label: 'Female' },
+                ]}
+                error={errors.gender?.message}
+                {...register('gender')}
+              />
+              <Input label="Date of birth" type="date" error={errors.date_of_birth?.message} {...register('date_of_birth')} />
             </div>
+
+            <Input label="Email address" icon={<Mail className="h-4 w-4" />} placeholder="you@example.com" error={errors.email?.message} {...register('email')} />
+            
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Input label="Phone number" icon={<Phone className="h-4 w-4" />} error={errors.phone?.message} {...register('phone')} />
+              <Select
+                label="City"
+                options={WILAYAS.map(w => ({ value: w.name, label: w.name }))}
+                error={errors.city?.message}
+                {...register('city')}
+              />
+            </div>
+            
+            <Input label="Full Address" error={errors.address?.message} {...register('address')} />
+
             <Select
               label="Speciality"
               placeholder="Select speciality"

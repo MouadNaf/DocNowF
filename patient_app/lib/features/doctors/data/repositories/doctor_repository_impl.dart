@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import '../../../../core/error/exceptions.dart' show ServerException;
 import '../../../home/domain/entities/doctor.dart';
 import '../../domain/repositories/doctor_repository.dart';
 import '../../../../core/error/failures.dart';

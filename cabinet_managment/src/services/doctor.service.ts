@@ -21,21 +21,37 @@ export interface SecretaryCreatePayload {
 
 export const doctorService = {
   async getSecretaries(): Promise<Secretary[]> {
-    const res = await api.get('doctor/secretaries');
+    const res = await api.get('private-cabinets/secretaries');
     return res.data;
   },
 
   async createSecretary(payload: SecretaryCreatePayload): Promise<Secretary> {
-    const res = await api.post('doctor/secretaries', payload);
-    return res.data;
-  },
-
-  async toggleSecretaryStatus(secretaryId: number): Promise<Secretary> {
-    const res = await api.patch(`doctor/secretaries/${secretaryId}/status`);
+    const res = await api.post('private-cabinets/secretaries', payload);
     return res.data;
   },
 
   async deleteSecretary(secretaryId: number): Promise<void> {
-    await api.delete(`doctor/secretaries/${secretaryId}`);
+    await api.delete(`private-cabinets/secretaries/${secretaryId}`);
   },
+
+  // Toggle status might need a different approach in Laravel if not directly supported as a toggle endpoint
+  async toggleSecretaryStatus(secretaryId: number): Promise<Secretary> {
+    const res = await api.patch(`private-cabinets/secretaries/${secretaryId}/status`);
+    return res.data;
+  },
+
+  async createCabinet(payload: any) {
+    const res = await api.post('private-cabinets', payload);
+    return res.data;
+  },
+
+  async getCabinet() {
+    const res = await api.get('private-cabinets');
+    return res.data;
+  },
+
+  async updateCabinet(id: number, payload: any) {
+    const res = await api.put(`private-cabinets/${id}`, payload);
+    return res.data;
+  }
 };

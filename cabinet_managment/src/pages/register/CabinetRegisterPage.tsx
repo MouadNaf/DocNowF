@@ -17,6 +17,7 @@ import { MEDICAL_SPECIALITY_OPTIONS, MEDICAL_SPECIALITY_SLUGS } from '@/constant
 import { ROUTES } from '@/constants/routes'
 import { authService } from '@/services/auth.service'
 import { useRegistrationStore } from '@/store/registration.store'
+import { Alert } from '@/components/ui/Alert'
 
 const schema = z.object({
   firstName: z.string().min(2), lastName: z.string().min(2), email: z.string().email(),
@@ -40,7 +41,11 @@ export function CabinetRegisterPage() {
     cabinet_registration: null,
     admin_national_id: null,
   })
-  const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm<V>({ resolver: zodResolver(schema) })
+  const [apiError, setApiError] = useState('')
+  const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm<V>({ 
+    resolver: zodResolver(schema),
+    defaultValues: { agreedToTerms: false as any }
+  })
 
   const validateDocuments = () => REQUIRED_DOC_KEYS.every((k) => documents[k] !== null)
   const docUploadedCount = REQUIRED_DOC_KEYS.filter((k) => documents[k] !== null).length
@@ -67,13 +72,27 @@ export function CabinetRegisterPage() {
             Need centralised control? Register as a clinic &rarr;
           </Link>
         </div>
+
+        {apiError && (
+          <div className="mb-4">
+            <Alert type="error" message={apiError} />
+          </div>
+        )}
+
         <form
           className="flex flex-col gap-4"
           onSubmit={handleSubmit(async (v) => {
-            if (!validateDocuments()) return
-            await authService.registerCabinet(v, documents)
-            setRole('cabinet')
-            navigate(`${ROUTES.PENDING}?role=cabinet`)
+            if (!validateDocuments()) {
+              setApiError('Please upload all required documents')
+              return
+            }
+            try {
+              await authService.registerCabinet(v, documents)
+              setRole('cabinet_admin')
+              navigate(`${ROUTES.PENDING}?role=cabinet`)
+            } catch (e: any) {
+              setApiError(e.response?.data?.message || (e as Error).message)
+            }
           })}
         >
           <div>

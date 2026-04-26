@@ -18,6 +18,7 @@ import { MEDICAL_SPECIALITY_SLUGS } from '@/constants/medical-specialities'
 import { ROUTES } from '@/constants/routes'
 import { authService } from '@/services/auth.service'
 import { useRegistrationStore } from '@/store/registration.store'
+import { Alert } from '@/components/ui/Alert'
 
 const schema = z.object({
   firstName: z.string().min(2), lastName: z.string().min(2), email: z.string().email(),
@@ -43,9 +44,11 @@ export function ClinicRegisterPage() {
     clinic_registration: null,
     admin_national_id: null,
   })
-  const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm<V>({
+  const [apiError, setApiError] = useState('')
+  
+  const { register, handleSubmit, setValue, watch, trigger, formState: { errors, isSubmitting } } = useForm<V>({
     resolver: zodResolver(schema),
-    defaultValues: { specialities: [] },
+    defaultValues: { specialities: [], agreedToTerms: false as any },
   })
   const clinicSpecialities = watch('specialities')
 
@@ -76,13 +79,27 @@ export function ClinicRegisterPage() {
             Register as cabinet collectif instead &rarr;
           </Link>
         </div>
+
+        {apiError && (
+          <div className="mb-4">
+            <Alert type="error" message={apiError} />
+          </div>
+        )}
+
         <form
           className="flex flex-col gap-4"
           onSubmit={handleSubmit(async (v) => {
-            if (!validateDocuments()) return
-            await authService.registerClinic(v, documents)
-            setRole('clinic')
-            navigate(`${ROUTES.PENDING}?role=clinic`)
+            if (!validateDocuments()) {
+              setApiError('Please upload all required documents')
+              return
+            }
+            try {
+              await authService.registerClinic(v, documents)
+              setRole('clinic_admin')
+              navigate(`${ROUTES.PENDING}?role=clinic`)
+            } catch (e: any) {
+              setApiError(e.response?.data?.message || (e as Error).message)
+            }
           })}
         >
           <div>

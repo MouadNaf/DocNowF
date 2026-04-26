@@ -7,6 +7,47 @@ body {
   font-family: 'Inter', sans-serif;
 }
 
+html[dir='rtl'] body {
+  direction: rtl;
+}
+
+.dark body {
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+/* Global dark-mode fallback for pages not using dark: classes yet */
+.dark .bg-white {
+  background-color: #111827 !important;
+}
+.dark .bg-gray-50,
+.dark .bg-slate-50 {
+  background-color: #0f172a !important;
+}
+.dark .text-gray-900 {
+  color: #f8fafc !important;
+}
+.dark .text-gray-700 {
+  color: #e2e8f0 !important;
+}
+.dark .text-gray-600,
+.dark .text-gray-500,
+.dark .text-gray-400 {
+  color: #94a3b8 !important;
+}
+.dark .border-gray-100,
+.dark .border-gray-200,
+.dark .border-gray-300 {
+  border-color: #334155 !important;
+}
+.dark input,
+.dark select,
+.dark textarea {
+  background-color: #0b1220 !important;
+  color: #e2e8f0 !important;
+  border-color: #334155 !important;
+}
+
 /* Card entrance */
 @keyframes fadeInUp {
   from {

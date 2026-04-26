@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:patient_app/core/utils/navigation_service.dart';
+import 'package:patient_app/features/auth/presentation/pages/profile_page.dart';
 import 'home_page.dart';
+import '../../../auth/presentation/pages/profile_page.dart';
 import '../../../../core/widgets/bottom_navigation_bar.dart';
-import '../../../../core/utils/navigation_service.dart';
 
 class MainDashboard extends StatefulWidget {
   const MainDashboard({super.key});
@@ -15,7 +17,7 @@ class _MainDashboardState extends State<MainDashboard> {
     const HomePage(),
     const PlaceholderPage(title: 'Appointments'),
     const PlaceholderPage(title: 'Favorites'),
-    const PlaceholderPage(title: 'Profile'),
+    const ProfilePage(),
   ];
 
   @override

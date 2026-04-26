@@ -26,6 +26,11 @@ export interface AuthUser {
   doctorType?: DoctorType
   status: AccountStatus
   avatarUrl?: string
+  isPremium?: boolean
+  phone_number?: string
+  city?: string
+  address?: string
+  speciality?: string
 }
 
 export interface LoginCredentials {

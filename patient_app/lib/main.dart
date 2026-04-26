@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
       providers: [
         BlocProvider(create: (_) => sl<HomeBloc>()),
         BlocProvider(create: (_) => sl<SearchBloc>()),
-        BlocProvider(create: (_) => AuthBloc()),
+        BlocProvider(create: (_) => sl<AuthBloc>()),
       ],
       child: MaterialApp(
         title: 'HealthCare Patient App',

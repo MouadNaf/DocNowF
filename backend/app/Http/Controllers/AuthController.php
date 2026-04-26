@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 
 class AuthController extends Controller
@@ -14,7 +15,7 @@ class AuthController extends Controller
 private function getRoleData(User $user)
 {
     return match($user->role) {
-        'doctor' => $user->doctor,
+        'doctor' => $user->doctor ? $user->doctor->load('privateCabinet') : null,
         'clinic' => $user->clinic,
         'collective_cabinet' => $user->collectiveCabinet,
         'patient' => $user->patient,
@@ -49,6 +50,8 @@ private function getRoleData(User $user)
 
         if (in_array($request->role, ['clinic', 'collective_cabinet'])) {
             $request->validate([
+                'clinic_name' => 'required_if:role,clinic|string|max:255',
+                'cabinet_name' => 'required_if:role,collective_cabinet|string|max:255',
                 'speciality' => 'required|string|max:255',
                 'latitude' => 'nullable|numeric|between:-90,90',
                 'longitude' => 'nullable|numeric|between:-180,180',
@@ -98,7 +101,7 @@ private function getRoleData(User $user)
                     $user->doctor()->create([
                         'speciality' => trim($request->speciality),
                         'is_verified' => false,
-                        'is_active' => true,
+                        'is_active' => false,
                         'documents' => [
                         'medical_license' => $request->file('medical_license')?->store('documents', 'public'),
                         'national_id' => $request->file('national_id')?->store('documents', 'public'),
@@ -108,19 +111,24 @@ private function getRoleData(User $user)
 
                 case 'clinic':
                     $user->clinic()->create([
+                        'name' => trim($request->clinic_name),
                         'speciality' => trim($request->speciality),
                         'city' => trim($request->clinic_city ?? $request->city),
                         'address' => trim($request->clinic_address ?? $request->address),
                         'latitude' => $request->latitude,
                         'longitude' => $request->longitude,
                         'is_verified' => false,
-                        'is_active' => true,
-                        'documents' => $storeDocuments($request->file('documents')),
+                        'is_active' => false,
+                        'documents' => [
+                            'medical_license' => $request->file('medical_license')?->store('documents', 'public'),
+                            'national_id' => $request->file('national_id')?->store('documents', 'public'),
+                        ],
                     ]);
                     break;
 
                 case 'collective_cabinet':
                     $user->collectiveCabinet()->create([
+                        'name' => trim($request->cabinet_name),
                         'speciality' => trim($request->speciality),
                         'city' => trim($request->cabinet_city ?? $request->city),
                         'address' => trim($request->cabinet_address ?? $request->address),
@@ -128,7 +136,10 @@ private function getRoleData(User $user)
                         'longitude' => $request->longitude,
                         'is_verified' => false,
                         'is_active' => true,
-                        'documents' => $storeDocuments($request->file('documents')),
+                        'documents' => [
+                            'medical_license' => $request->file('medical_license')?->store('documents', 'public'),
+                            'national_id' => $request->file('national_id')?->store('documents', 'public'),
+                        ],
                     ]);
                     break;
             }
@@ -187,7 +198,7 @@ public function login(Request $request)
         ], 401);
     }
 
-    // Role-based active check
+    // Role-based active and verification check
     if (in_array($user->role, ['doctor', 'clinic', 'collective_cabinet'])) {
         $profile = match($user->role) {
             'doctor' => $user->doctor,
@@ -195,20 +206,19 @@ public function login(Request $request)
             'collective_cabinet' => $user->collectiveCabinet,
         };
 
-        if (!$profile || !$profile->is_active) {
+        if (!$profile) {
             return response()->json([
                 'success' => false,
-                'message' => 'Your account is not active. Please contact support.'
-            ], 403);
+                'message' => 'Profile not found.'
+            ], 404);
         }
 
-      /*  // Optional
-        if ($profile->subscriptions()->where('status', 'active')->count() === 0) {
+        if (!$profile->is_verified) {
             return response()->json([
                 'success' => false,
-                'message' => 'Your subscription has expired. Please renew to login.'
+                'message' => 'Your account is pending admin approval. You will be notified once verified.'
             ], 403);
-        }*/
+        }
     }
 
     // Generate token
@@ -238,5 +248,54 @@ public function logout(Request $request)
         'success' => true,
         'message' => 'Logged out successfully'
     ], 200);
+}
+
+public function updateProfile(Request $request)
+{
+    $user = Auth::user();
+    
+    $request->validate([
+        'name' => 'sometimes|string|max:255',
+        'phone_number' => 'sometimes|string|max:20',
+        'city' => 'sometimes|string|max:100',
+        'address' => 'sometimes|string|max:255',
+        'gender' => 'sometimes|in:male,female',
+        'date_of_birth' => 'sometimes|date',
+        'speciality' => 'sometimes|string|max:255',
+        'profile_picture' => 'sometimes|image|mimes:jpeg,png,jpg,gif|max:2048',
+    ]);
+
+    // Handle Profile Picture
+    if ($request->hasFile('profile_picture')) {
+        $path = $request->file('profile_picture')->store('profile_pictures', 'public');
+        $user->profile_picture = $path;
+    }
+
+    $user->update($request->only(['name', 'phone_number', 'city', 'address', 'gender', 'date_of_birth']));
+
+    // Handle Doctor Speciality
+    if ($user->role === 'doctor' && $request->has('speciality')) {
+        $user->doctor()->update(['speciality' => $request->speciality]);
+    }
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Profile updated successfully',
+        'user' => [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone_number' => $user->phone_number,
+            'city' => $user->city,
+            'address' => $user->address,
+            'gender' => $user->gender,
+            'date_of_birth' => $user->date_of_birth,
+            'role' => $user->role,
+            'profile_picture' => $user->profile_picture 
+                ? asset("storage/{$user->profile_picture}") 
+                : null,
+            'role_data' => $this->getRoleData($user),
+        ]
+    ]);
 }
 }

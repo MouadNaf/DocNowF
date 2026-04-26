@@ -24,116 +24,123 @@ class _LoginPageState extends State<LoginPage> {
     final orientation = MediaQuery.of(context).orientation;
     final isLandscape = orientation == Orientation.landscape;
 
-    return BlocProvider(
-      create: (context) => AuthBloc(),
-      child: BlocListener<AuthBloc, AuthState>(
-        listener: (context, state) {
-          if (state is AuthAuthenticated) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const MainDashboard()),
-            );
-          } else if (state is AuthError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message), backgroundColor: Colors.red),
-            );
-          }
-        },
-        child: Scaffold(
-          backgroundColor: AppColors.background,
-          body: SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Container(
-                  constraints: const BoxConstraints(maxWidth: 500),
-                  child: Column(
-                    children: [
-                      SizedBox(height: isLandscape ? 20 : 40),
-                      // Logo
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(20),
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, state) {
+        if (state is AuthAuthenticated) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const MainDashboard()),
+          );
+        } else if (state is AuthError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+          );
+        }
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 500),
+                child: Column(
+                  children: [
+                    SizedBox(height: isLandscape ? 20 : 40),
+                    // Logo
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Icon(
+                        Icons.favorite,
+                        color: Colors.white,
+                        size: isLandscape ? 30 : 40,
+                      ),
+                    ),
+                    SizedBox(height: isLandscape ? 16 : 32),
+                    const Text(
+                      'Welcome Back',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Sign in to continue your wellness journey',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    SizedBox(height: isLandscape ? 24 : 48),
+
+                    // Form
+                    _buildLabel('Email Address'),
+                    _buildTextField(
+                      controller: _emailController,
+                      hint: 'Enter your email',
+                      icon: Icons.email_outlined,
+                    ),
+                    const SizedBox(height: 20),
+                    _buildLabel('Password'),
+                    _buildTextField(
+                      controller: _passwordController,
+                      hint: 'Enter your password',
+                      icon: Icons.lock_outline,
+                      isPassword: true,
+                      obscureText: _obscurePassword,
+                      onTogglePassword: () {
+                        setState(() => _obscurePassword = !_obscurePassword);
+                      },
+                    ),
+
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () {},
+                        child: const Text(
+                          'Forgot Password?',
+                          style: TextStyle(color: AppColors.primary),
                         ),
-                        child: Icon(Icons.favorite, color: Colors.white, size: isLandscape ? 30 : 40),
                       ),
-                      SizedBox(height: isLandscape ? 16 : 32),
-                      const Text(
-                        'Welcome Back',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Sign in to continue your wellness journey',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      SizedBox(height: isLandscape ? 24 : 48),
-                      
-                      // Form
-                      _buildLabel('Email Address'),
-                      _buildTextField(
-                        controller: _emailController,
-                        hint: 'Enter your email',
-                        icon: Icons.email_outlined,
-                      ),
-                      const SizedBox(height: 20),
-                      _buildLabel('Password'),
-                      _buildTextField(
-                        controller: _passwordController,
-                        hint: 'Enter your password',
-                        icon: Icons.lock_outline,
-                        isPassword: true,
-                        obscureText: _obscurePassword,
-                        onTogglePassword: () {
-                          setState(() => _obscurePassword = !_obscurePassword);
-                        },
-                      ),
-                      
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: () {},
-                          child: const Text(
-                            'Forgot Password?',
-                            style: TextStyle(color: AppColors.primary),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      
-                      // Sign In Button
-                      BlocBuilder<AuthBloc, AuthState>(
-                        builder: (context, state) {
-                          return SizedBox(
-                            width: double.infinity,
-                            height: 56,
-                            child: ElevatedButton(
-                              onPressed: state is AuthLoading 
-                                ? null 
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Sign In Button
+                    BlocBuilder<AuthBloc, AuthState>(
+                      builder: (context, state) {
+                        return SizedBox(
+                          width: double.infinity,
+                          height: 56,
+                          child: ElevatedButton(
+                            onPressed: state is AuthLoading
+                                ? null
                                 : () {
                                     context.read<AuthBloc>().add(
-                                      LoginRequested(_emailController.text, _passwordController.text),
+                                      LoginRequested(
+                                        _emailController.text,
+                                        _passwordController.text,
+                                      ),
                                     );
                                   },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                elevation: 0,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
                               ),
-                              child: state is AuthLoading
-                                ? const CircularProgressIndicator(color: Colors.white)
+                              elevation: 0,
+                            ),
+                            child: state is AuthLoading
+                                ? const CircularProgressIndicator(
+                                    color: Colors.white,
+                                  )
                                 : const Text(
                                     'Sign In',
                                     style: TextStyle(
@@ -142,74 +149,78 @@ class _LoginPageState extends State<LoginPage> {
                                       color: Colors.white,
                                     ),
                                   ),
-                            ),
-                          );
-                        },
-                      ),
-                      
-                      const SizedBox(height: 24),
-                      const Row(
-                        children: [
-                          Expanded(child: Divider()),
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 16),
-                            child: Text('or continue with', style: TextStyle(color: AppColors.textSecondary)),
                           ),
-                          Expanded(child: Divider()),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      
-                      // Social Login
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildSocialButton(
-                              iconPath: 'assets/google.png',
-                              label: 'Google',
-                              icon: Icons.g_mobiledata,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: _buildSocialButton(
-                              iconPath: 'assets/facebook.png',
-                              label: 'Facebook',
-                              icon: Icons.facebook,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 32),
-                      
-                      // Sign Up Link
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Text(
-                            "Don't have an account? ",
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 24),
+                    const Row(
+                      children: [
+                        Expanded(child: Divider()),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16),
+                          child: Text(
+                            'or continue with',
                             style: TextStyle(color: AppColors.textSecondary),
                           ),
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const RegisterPage()),
-                              );
-                            },
-                            child: const Text(
-                              'Sign Up',
-                              style: TextStyle(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.bold,
+                        ),
+                        Expanded(child: Divider()),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Social Login
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildSocialButton(
+                            iconPath: 'assets/google.png',
+                            label: 'Google',
+                            icon: Icons.g_mobiledata,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _buildSocialButton(
+                            iconPath: 'assets/facebook.png',
+                            label: 'Facebook',
+                            icon: Icons.facebook,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Sign Up Link
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          "Don't have an account? ",
+                          style: TextStyle(color: AppColors.textSecondary),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const RegisterPage(),
                               ),
+                            );
+                          },
+                          child: const Text(
+                            'Sign Up',
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 40),
-                    ],
-                  ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 40),
+                  ],
                 ),
               ),
             ),
@@ -263,20 +274,25 @@ class _LoginPageState extends State<LoginPage> {
           hintText: hint,
           prefixIcon: Icon(icon, color: AppColors.textSecondary, size: 20),
           suffixIcon: isPassword
-            ? IconButton(
-                icon: Icon(
-                  obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                  color: AppColors.textSecondary,
-                  size: 20,
-                ),
-                onPressed: onTogglePassword,
-              )
-            : null,
+              ? IconButton(
+                  icon: Icon(
+                    obscureText
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: AppColors.textSecondary,
+                    size: 20,
+                  ),
+                  onPressed: onTogglePassword,
+                )
+              : null,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
           ),
-          contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 18,
+            horizontal: 16,
+          ),
         ),
       ),
     );

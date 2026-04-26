@@ -18,10 +18,17 @@ export const ROUTES = {
   DOCTOR_STATISTICS: '/doctor/statistics',
   DOCTOR_SECRETARIES: '/doctor/secretaries',
   DOCTOR_SETTINGS: '/doctor/settings',
+  DOCTOR_CABINET: '/doctor/cabinet',
+  DOCTOR_PROFILE: '/doctor/profile',
   SECRETARY_DASHBOARD: '/secretary/dashboard',
   SECRETARY_APPOINTMENTS: '/secretary/appointments',
   SECRETARY_WAITING: '/secretary/waiting-list',
   SECRETARY_CALENDAR: '/secretary/calendar',
+  SECRETARY_WALK_IN: '/secretary/walk-in',
+  SECRETARY_PATIENTS: '/secretary/patients',
+  SECRETARY_PATIENT_DETAIL: '/secretary/patients/:id',
+  SECRETARY_PATIENT_NEW: '/secretary/patients/new',
+  SECRETARY_SETTINGS: '/secretary/settings',
   CLINIC_DASHBOARD: '/clinic-admin/dashboard',
   CABINET_DASHBOARD: '/cabinet-admin/dashboard',
   ADMIN_DASHBOARD: '/admin/dashboard',
@@ -29,11 +36,11 @@ export const ROUTES = {
 } as const
 
 export const ROLE_HOME: Record<string, string> = {
-  doctor: ROUTES.DOCTOR_DASHBOARD,
-  clinic_admin: ROUTES.CLINIC_DASHBOARD,
-  cabinet_admin: ROUTES.CABINET_DASHBOARD,
+  doctor: ROUTES.DOCTOR_PROFILE,
+  clinic: ROUTES.CLINIC_DASHBOARD,
+  collective_cabinet: ROUTES.CABINET_DASHBOARD,
+  admin: ROUTES.ADMIN_DASHBOARD,
   secretary: ROUTES.SECRETARY_APPOINTMENTS,
-  platform_admin: ROUTES.ADMIN_DASHBOARD,
 }
 
 export const PENDING_ROUTE: Record<string, string> = {

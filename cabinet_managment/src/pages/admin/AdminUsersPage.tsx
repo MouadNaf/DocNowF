@@ -1,7 +1,5 @@
 import { 
   Search, 
-  Filter, 
-  MoreHorizontal, 
   CheckCircle, 
   XCircle, 
   Clock,
@@ -10,8 +8,11 @@ import {
   ShieldAlert,
   Download,
   FileText,
-  User as UserIcon,
-  Layout
+  Crown,
+  Building2,
+  Stethoscope,
+  MapPin,
+  Briefcase
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { adminService } from '@/services/admin.service';
@@ -19,190 +20,221 @@ import { useEffect, useState, useMemo } from 'react';
 
 const API_BASE_URL = 'http://127.0.0.1:8000';
 
-const roleMap: Record<string, string> = {
-  'DOCTOR': 'Médecin',
-  'SECRETARY': 'Secrétaire',
-  'CLINIC_ADMIN': 'Clinique',
-  'CABINET_ADMIN': 'Cabinet',
-  'PLATFORM_ADMIN': 'Administrateur'
-};
-
-const statusMap: Record<string, string> = {
-  'ACTIVE': 'Actif',
-  'PENDING_APPROVAL': 'En attente',
-  'SUSPENDED': 'Suspendu',
-  'REJECTED': 'Rejeté'
-};
-
 export function AdminUsersPage() {
-  const [users, setUsers] = useState<any[]>([]);
-  const [selectedUser, setSelectedUser] = useState<any | null>(null);
+  const [entities, setEntities] = useState<any[]>([]);
+  const [selectedEntity, setSelectedEntity] = useState<any | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
 
-  const fetchUsers = async () => {
+  const fetchData = async () => {
     try {
+      setLoading(true);
       const data = await adminService.getUsers();
-      setUsers(data);
+      setEntities(data);
     } catch (err) {
-      console.error('Failed to fetch users:', err);
+      console.error('Failed to fetch data:', err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchUsers();
+    fetchData();
   }, []);
 
-  const handleUpdateStatus = async (userId: number, status: string) => {
+  const handleApprove = async (entity: any) => {
     try {
-      await adminService.updateUserStatus(userId, status);
-      await fetchUsers(); // Refresh list
-      setSelectedUser(null); // Close drawer
+      if (entity.entity_type === 'doctor') await adminService.approveDoctor(entity.id);
+      else if (entity.entity_type === 'clinic') await adminService.approveClinic(entity.id);
+      else if (entity.entity_type === 'cabinet') await adminService.approveCabinet(entity.id);
+      // Private cabinets are usually auto-approved or linked to doctor approval
+      
+      await fetchData();
+      setSelectedEntity(null);
     } catch (err) {
-      console.error('Failed to update status:', err);
+      console.error('Failed to approve:', err);
     }
   };
 
-  const filteredUsers = useMemo(() => {
-    return users.filter(user => 
-      user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  const handleTogglePremium = async (entity: any) => {
+    try {
+      if (entity.entity_type === 'doctor') await adminService.toggleDoctorStatus(entity.id);
+      else if (entity.entity_type === 'clinic') await adminService.toggleClinicStatus(entity.id);
+      else if (entity.entity_type === 'cabinet') await adminService.toggleCabinetStatus(entity.id);
+      
+      await fetchData();
+    } catch (err) {
+      console.error('Failed to toggle premium:', err);
+    }
+  };
+
+  const handleReject = async (entity: any) => {
+    if (!window.confirm('Etes-vous sûr de vouloir supprimer ce compte ?')) return;
+    try {
+      if (entity.entity_type === 'doctor') await adminService.rejectDoctor(entity.id);
+      else if (entity.entity_type === 'clinic') await adminService.rejectClinic(entity.id);
+      else if (entity.entity_type === 'cabinet') await adminService.rejectCabinet(entity.id);
+      
+      await fetchData();
+      setSelectedEntity(null);
+    } catch (err) {
+      console.error('Failed to reject:', err);
+    }
+  };
+
+  const filteredEntities = useMemo(() => {
+    return entities.filter(e => 
+      e.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      e.user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      e.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      e.private_cabinet?.name?.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [users, searchTerm]);
+  }, [entities, searchTerm]);
 
-  const statsSummary = useMemo(() => {
+  const stats = useMemo(() => {
     return {
-      total: users.length,
-      pending: users.filter(u => u.status === 'PENDING_APPROVAL').length,
-      active: users.filter(u => u.status === 'ACTIVE').length
+      total: entities.length,
+      pending: entities.filter(e => !e.is_verified).length,
+      premium: entities.filter(e => e.is_active).length
     };
-  }, [users]);
-
-  const getStatusStyle = (status: string) => {
-    switch (status) {
-      case 'ACTIVE': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
-      case 'PENDING_APPROVAL': return 'bg-orange-50 text-orange-600 border-orange-100';
-      case 'SUSPENDED': return 'bg-red-50 text-red-600 border-red-100';
-      case 'REJECTED': return 'bg-gray-50 text-gray-500 border-gray-100';
-      default: return 'bg-gray-50 text-gray-500 border-gray-100';
-    }
-  };
+  }, [entities]);
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-6 animate-in fade-in duration-500 pb-12">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Gestion des utilisateurs</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Gestion des comptes</h1>
           <div className="flex items-center gap-4 mt-1">
-            <p className="text-sm text-gray-500">Gérer les comptes de la plateforme</p>
+            <p className="text-sm text-gray-500">Valider les médecins, cliniques et cabinets</p>
             <div className="h-4 w-[1px] bg-gray-200"></div>
             <div className="flex gap-3">
-              <span className="text-xs font-bold text-gray-900">{statsSummary.total} Total</span>
-              <span className="text-xs font-bold text-orange-600">{statsSummary.pending} En attente</span>
-              <span className="text-xs font-bold text-emerald-600">{statsSummary.active} Actifs</span>
+              <span className="text-xs font-bold text-gray-900">{stats.total} Total</span>
+              <span className="text-xs font-bold text-orange-600">{stats.pending} En attente</span>
+              <span className="text-xs font-bold text-blue-600">{stats.premium} Premium</span>
             </div>
           </div>
         </div>
-        <div className="flex gap-2">
-          <button className="flex items-center gap-2 bg-white px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors">
-            <Download size={18} /> Exporter CSV
-          </button>
-        </div>
       </div>
-{/* ... (keep filters bar) */}
-      <div className="bg-white p-4 rounded-[24px] border border-gray-100 shadow-sm flex flex-col lg:flex-row gap-4">
-        <div className="flex-1 relative">
+
+      <div className="bg-white p-4 rounded-[24px] border border-gray-100 shadow-sm">
+        <div className="relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
           <input 
             type="text" 
-            placeholder="Rechercher par nom, email ou ID..." 
+            placeholder="Rechercher par nom, email ou établissement..." 
             className="w-full pl-12 pr-4 py-3 bg-[#F8FAFC] border-none rounded-xl text-sm focus:ring-2 focus:ring-[#1D9E75]/20"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="flex gap-3">
-          <select className="bg-[#F8FAFC] border-none rounded-xl text-sm px-4 py-3 font-bold text-gray-600 focus:ring-2 focus:ring-[#1D9E75]/20 min-w-[140px]">
-            <option>Tous les rôles</option>
-            <option>Médecin</option>
-            <option>Secrétaire</option>
-            <option>Clinique</option>
-          </select>
-          <select className="bg-[#F8FAFC] border-none rounded-xl text-sm px-4 py-3 font-bold text-gray-600 focus:ring-2 focus:ring-[#1D9E75]/20 min-w-[140px]">
-            <option>Tous les statuts</option>
-            <option>Actif</option>
-            <option>En attente</option>
-            <option>Suspendu</option>
-          </select>
-          <button className="bg-gray-900 text-white p-3 rounded-xl hover:bg-gray-800 transition-colors">
-            <Filter size={20} />
-          </button>
-        </div>
       </div>
 
-      {/* Users Table */}
       <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100">
-                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-widest">Nom / Email</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-widest">Rôle</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-widest">Statut</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-widest text-center">Vérifié</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-widest">S'inscrit le</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-widest">Utilisateur / Établissement</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-widest">Type</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-widest text-center">Statut</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-widest text-center">Premium</th>
                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-widest">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filteredUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50/50 transition-colors group">
+              {filteredEntities.map((entity) => (
+                <tr key={`${entity.entity_type}-${entity.id}`} className="hover:bg-gray-50/50 transition-colors group">
                   <td className="px-6 py-5">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 font-bold group-hover:bg-white transition-colors border border-transparent group-hover:border-gray-100">
-                        {user.full_name?.charAt(0)}
+                      <div className={cn(
+                        "w-10 h-10 rounded-xl flex items-center justify-center font-bold",
+                        entity.entity_type === 'doctor' ? "bg-emerald-50 text-emerald-600" : 
+                        entity.entity_type === 'private_cabinet' ? "bg-orange-50 text-orange-600" :
+                        "bg-blue-50 text-blue-600"
+                      )}>
+                        {entity.entity_type === 'doctor' ? <Stethoscope size={18} /> : <Building2 size={18} />}
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-gray-900">{user.full_name}</p>
-                        <p className="text-xs font-medium text-gray-500">{user.email}</p>
+                        <p className="text-sm font-bold text-gray-900">{entity.user?.name || entity.name}</p>
+                        <p className="text-xs font-medium text-gray-500">{entity.user?.email}</p>
+                        
+                        {entity.entity_type === 'doctor' && entity.private_cabinet && (
+                          <div className="flex items-center gap-1 mt-1">
+                            <Building2 size={10} className="text-emerald-600" />
+                            <p className="text-[10px] font-bold text-emerald-600 uppercase">Cabinet: {entity.private_cabinet.name}</p>
+                          </div>
+                        )}
+                        
+                        {entity.entity_type === 'private_cabinet' && (
+                          <div className="flex items-center gap-1 mt-1">
+                            <Briefcase size={10} className="text-orange-600" />
+                            <p className="text-[10px] font-bold text-orange-600 uppercase">Dr. {entity.doctor?.user?.name}</p>
+                          </div>
+                        )}
+
+                        {(entity.entity_type === 'clinic' || entity.entity_type === 'cabinet') && entity.name && (
+                          <p className="text-[10px] font-bold text-blue-600 uppercase mt-0.5">{entity.name}</p>
+                        )}
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-5">
-                    <span className="text-xs font-bold text-gray-600 bg-gray-100 px-2.5 py-1 rounded-lg">
-                      {roleMap[user.role] || user.role}
-                    </span>
-                  </td>
-                  <td className="px-6 py-5">
                     <span className={cn(
-                      "text-[11px] font-bold px-3 py-1.5 rounded-full border",
-                      getStatusStyle(user.status)
+                      "text-[10px] font-bold px-2 py-1 rounded-lg uppercase tracking-wider",
+                      entity.entity_type === 'doctor' ? "bg-emerald-50 text-emerald-600" : 
+                      entity.entity_type === 'clinic' ? "bg-purple-50 text-purple-600" : 
+                      entity.entity_type === 'private_cabinet' ? "bg-orange-50 text-orange-600" :
+                      "bg-blue-50 text-blue-600"
                     )}>
-                      {statusMap[user.status] || user.status}
+                      {entity.entity_type === 'doctor' ? 'Médecin' : 
+                       entity.entity_type === 'clinic' ? 'Clinique' : 
+                       entity.entity_type === 'private_cabinet' ? 'Cabinet Privé' : 'Cabinet'}
                     </span>
                   </td>
                   <td className="px-6 py-5 text-center">
-                    {user.status === 'ACTIVE' ? (
-                      <CheckCircle size={18} className="text-[#1D9E75] mx-auto" strokeWidth={3} />
+                    {entity.is_verified ? (
+                      <div className="flex items-center justify-center gap-1 text-[#1D9E75]">
+                        <CheckCircle size={16} strokeWidth={3} />
+                        <span className="text-[10px] font-bold">Vérifié</span>
+                      </div>
                     ) : (
-                      <XCircle size={18} className="text-red-400 mx-auto" strokeWidth={3} />
+                      <div className="flex items-center justify-center gap-1 text-orange-500">
+                        <Clock size={16} />
+                        <span className="text-[10px] font-bold">En attente</span>
+                      </div>
                     )}
                   </td>
-                  <td className="px-6 py-5">
-                    <p className="text-xs font-bold text-gray-500 uppercase">
-                      {new Date(user.created_at).toLocaleDateString()}
-                    </p>
+                  <td className="px-6 py-5 text-center">
+                    <button 
+                      onClick={() => handleTogglePremium(entity)}
+                      disabled={entity.entity_type === 'private_cabinet'}
+                      className={cn(
+                        "p-2 rounded-xl transition-all border",
+                        entity.is_active 
+                          ? "bg-blue-50 text-blue-600 border-blue-100" 
+                          : "bg-gray-50 text-gray-400 border-gray-100 grayscale",
+                        entity.entity_type === 'private_cabinet' && "opacity-50 cursor-not-allowed"
+                      )}
+                    >
+                      <Crown size={18} fill={entity.is_active ? "currentColor" : "none"} />
+                    </button>
                   </td>
                   <td className="px-6 py-5">
                     <div className="flex items-center gap-2">
                       <button 
-                        onClick={() => setSelectedUser(user)}
-                        className="p-2 text-gray-400 hover:text-[#1D9E75] hover:bg-emerald-50 rounded-lg transition-colors border border-transparent hover:border-emerald-100"
-                        title="Voir informations"
+                        onClick={() => setSelectedEntity(entity)}
+                        className="p-2 text-gray-400 hover:text-[#1D9E75] hover:bg-emerald-50 rounded-lg transition-colors"
                       >
-                        <Eye size={18} strokeWidth={2.5} />
+                        <Eye size={18} />
+                      </button>
+                      <button 
+                        onClick={() => handleReject(entity)}
+                        className={cn(
+                          "p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors",
+                          entity.entity_type === 'private_cabinet' && "hidden"
+                        )}
+                      >
+                        <ShieldAlert size={18} />
                       </button>
                     </div>
                   </td>
@@ -213,119 +245,129 @@ export function AdminUsersPage() {
         </div>
       </div>
 
-      {/* Verification Drawer / Modal */}
-      {selectedUser && (
+      {/* Details Drawer */}
+      {selectedEntity && (
         <div className="fixed inset-0 z-50 flex justify-end animate-in fade-in duration-300">
-          <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setSelectedUser(null)} />
+          <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setSelectedEntity(null)} />
           <div className="relative w-full max-w-xl bg-white h-screen shadow-2xl animate-in slide-in-from-right duration-500 flex flex-col">
             <div className="p-8 border-b border-gray-100 flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-bold text-gray-900">Détails de l'utilisateur</h3>
-                <p className="text-sm text-gray-500 mt-1">Vérification des documents officiels</p>
+                <h3 className="text-xl font-bold text-gray-900">Détails du compte</h3>
+                <p className="text-sm text-gray-500 mt-1">Examen des informations de {selectedEntity.user?.name || selectedEntity.name}</p>
               </div>
-              <button onClick={() => setSelectedUser(null)} className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
+              <button onClick={() => setSelectedEntity(null)} className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
                 <XCircle size={24} className="text-gray-400" />
               </button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-8 space-y-8">
-              {/* Profile Overview */}
-              <div className="flex items-center gap-6 p-6 rounded-[24px] bg-[#F8FAFC] border border-gray-100">
-                <div className="w-16 h-16 rounded-[20px] bg-[#1D9E75]/10 text-[#1D9E75] flex items-center justify-center text-2xl font-bold">
-                  {selectedUser.full_name?.charAt(0)}
+              {/* Entity Info Header */}
+              <div className="bg-gray-50 rounded-[32px] p-6 space-y-6 border border-gray-100">
+                <div className="flex items-center gap-4">
+                  <div className={cn(
+                    "size-14 rounded-2xl flex items-center justify-center shadow-sm",
+                    selectedEntity.entity_type === 'doctor' ? "bg-white text-[#1D9E75]" : "bg-white text-blue-500"
+                  )}>
+                    {selectedEntity.entity_type === 'doctor' ? <Stethoscope size={28} /> : <Building2 size={28} />}
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Type d'entité</p>
+                    <p className="text-xl font-black text-gray-900 capitalize">{selectedEntity.entity_type.replace('_', ' ')}</p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="text-lg font-bold text-gray-900">{selectedUser.full_name}</h4>
-                  <p className="text-sm font-medium text-gray-500">{selectedUser.email}</p>
-                  <p className="text-xs font-bold text-[#1D9E75] uppercase mt-2 tracking-wider flex items-center gap-1">
-                    <Layout size={12} /> {selectedUser.role} 
-                  </p>
+
+                {selectedEntity.entity_type === 'doctor' && selectedEntity.private_cabinet && (
+                  <div className="pt-6 border-t border-gray-200">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Cabinet Privé Lié</p>
+                    <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-gray-100">
+                      <div className="flex items-center gap-3">
+                        <Building2 size={18} className="text-[#1D9E75]" />
+                        <span className="font-bold text-gray-900">{selectedEntity.private_cabinet.name}</span>
+                      </div>
+                      <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">ACTIF</span>
+                    </div>
+                  </div>
+                )}
+
+                {selectedEntity.entity_type === 'private_cabinet' && (
+                  <div className="pt-6 border-t border-gray-200">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Médecin Propriétaire</p>
+                    <div className="flex items-center gap-3 bg-white p-4 rounded-2xl border border-gray-100">
+                      <Briefcase size={18} className="text-orange-500" />
+                      <span className="font-bold text-gray-900">Dr. {selectedEntity.doctor?.user?.name}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-8">
+                <div className="space-y-1">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Ville / Wilaya</p>
+                  <p className="text-base font-bold text-gray-900">{selectedEntity.user?.city || selectedEntity.city || 'N/A'}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Contact Téléphonique</p>
+                  <p className="text-base font-bold text-gray-900">{selectedEntity.user?.phone_number || 'N/A'}</p>
                 </div>
               </div>
 
-              {/* Personal Info Grid */}
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-1">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Numéro de téléphone</p>
-                  <p className="text-sm font-bold text-gray-900">{selectedUser.phone || 'N/A'}</p>
+              {(selectedEntity.private_cabinet || selectedEntity.entity_type === 'private_cabinet') && (
+                <div className="space-y-4">
+                  <h5 className="text-sm font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                    <MapPin size={16} /> Adresse du cabinet
+                  </h5>
+                  <div className="p-5 bg-gray-50 rounded-2xl border border-gray-100">
+                    <p className="text-sm font-bold text-gray-900">{selectedEntity.address || selectedEntity.private_cabinet?.address}</p>
+                    <p className="text-xs font-medium text-gray-500 mt-1">{selectedEntity.city || selectedEntity.private_cabinet?.city}</p>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Spécialité</p>
-                  <p className="text-sm font-bold text-gray-900">{selectedUser.speciality || 'N/A'}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Date d'inscription</p>
-                  <p className="text-sm font-bold text-gray-900">{new Date(selectedUser.created_at).toLocaleDateString()}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Statut actuel</p>
-                  <span className={cn("inline-block text-[11px] font-bold px-3 py-1 rounded-full border mt-1", getStatusStyle(selectedUser.status))}>
-                    {selectedUser.status}
-                  </span>
-                </div>
-              </div>
+              )}
 
               {/* Documents Section */}
-              <div className="space-y-6">
-                <h5 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                  <FileText size={18} className="text-gray-400" /> Documents de vérification
+              <div className="space-y-4">
+                <h5 className="text-sm font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                  <FileText size={16} /> Dossier de vérification
                 </h5>
                 
-                <div className="grid grid-cols-1 gap-4">
-                  {selectedUser.national_id_path ? (
-                    <div className="space-y-3">
-                      <p className="text-sm font-bold text-gray-700">Carte d'identité Nationale</p>
-                      <div className="aspect-[16/10] bg-gray-100 rounded-[20px] overflow-hidden border border-gray-200 group relative">
-                        <img src={`${API_BASE_URL}/${selectedUser.national_id_path}`} alt="ID Card" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <a href={`${API_BASE_URL}/${selectedUser.national_id_path}`} target="_blank" rel="noreferrer" className="bg-white text-gray-900 px-4 py-2 rounded-xl flex items-center gap-2 text-sm font-bold">
-                            <Download size={16} /> Voir / Télécharger
-                          </a>
+                {selectedEntity.documents ? (
+                  <div className="grid grid-cols-1 gap-6">
+                    {Object.entries(selectedEntity.documents).map(([key, path]: [string, any]) => (
+                      <div key={key} className="space-y-2">
+                        <p className="text-xs font-bold text-gray-600 capitalize ml-1">{key.replace('_', ' ')}</p>
+                        <div className="aspect-video bg-gray-100 rounded-[24px] overflow-hidden border border-gray-200 group relative shadow-sm">
+                          <img 
+                            src={`${API_BASE_URL}/storage/${path?.replace('public/', '')}`} 
+                            alt={key} 
+                            className="w-full h-full object-cover" 
+                            onError={(e: any) => e.target.src = 'https://placehold.co/600x400?text=Document'}
+                          />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <a href={`${API_BASE_URL}/storage/${path?.replace('public/', '')}`} target="_blank" rel="noreferrer" className="bg-white text-gray-900 px-6 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-xl hover:scale-105 transition-transform">
+                              <Download size={18} /> Consulter le document
+                            </a>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="p-6 bg-red-50 rounded-2xl border border-red-100 flex items-center gap-3 text-red-600">
-                      <Clock size={20} /> <p className="text-sm font-medium">Carte d'identité non disponible</p>
-                    </div>
-                  )}
-
-                  {selectedUser.medical_license_path ? (
-                    <div className="space-y-3">
-                      <p className="text-sm font-bold text-gray-700">Diplôme / Autorisation d'exercice</p>
-                      <div className="aspect-[16/10] bg-gray-100 rounded-[20px] overflow-hidden border border-gray-200 group relative">
-                        <img src={`${API_BASE_URL}/${selectedUser.medical_license_path}`} alt="License" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <a href={`${API_BASE_URL}/${selectedUser.medical_license_path}`} target="_blank" rel="noreferrer" className="bg-white text-gray-900 px-4 py-2 rounded-xl flex items-center gap-2 text-sm font-bold">
-                            <Download size={16} /> Voir / Télécharger
-                          </a>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="p-6 bg-red-50 rounded-2xl border border-red-100 flex items-center gap-3 text-red-600">
-                      <Clock size={20} /> <p className="text-sm font-medium">Document de licence non disponible</p>
-                    </div>
-                  )}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-12 text-center bg-gray-50 rounded-[32px] border-2 border-dashed border-gray-200">
+                    <p className="text-sm font-bold text-gray-400">Aucun document n'a été fourni.</p>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Actions Footer */}
-            <div className="p-8 border-t border-gray-100 flex gap-4 bg-white shrink-0">
-              <button 
-                className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 text-white py-4 rounded-[18px] font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100 active:scale-95"
-                onClick={() => handleUpdateStatus(selectedUser.id, 'ACTIVE')}
-              >
-                <ShieldCheck size={20} /> Approuver le compte
-              </button>
-              <button 
-                className="flex-1 flex items-center justify-center gap-2 bg-white text-red-600 border-2 border-red-100 py-4 rounded-[18px] font-bold hover:bg-red-50 transition-all active:scale-95"
-                onClick={() => handleUpdateStatus(selectedUser.id, 'REJECTED')}
-              >
-                <ShieldAlert size={20} /> Rejeter / Bloquer
-              </button>
-            </div>
+            {!selectedEntity.is_verified && selectedEntity.entity_type !== 'private_cabinet' && (
+              <div className="p-8 border-t border-gray-100 bg-white">
+                <button 
+                  onClick={() => handleApprove(selectedEntity)}
+                  className="w-full flex items-center justify-center gap-2 bg-[#1D9E75] text-white py-5 rounded-[20px] font-bold hover:bg-[#15805d] transition-all shadow-xl shadow-emerald-100 text-lg"
+                >
+                  <ShieldCheck size={24} /> Approuver le compte maintenant
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

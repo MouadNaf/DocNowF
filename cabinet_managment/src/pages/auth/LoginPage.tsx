@@ -41,13 +41,18 @@ export function LoginPage() {
     try {
       const { user, token } = await authService.login(values)
       setAuth(user, token)
+      
+      // Navigate based on role and status
       if (user.status === 'pending_approval') return navigate(`${ROUTES.PENDING}?role=${user.role}`)
-      if (user.status === 'pending_verification') return navigate(`${ROUTES.PENDING}?role=doctor`)
-      if (user.status === 'suspended') return setError('Your account has been suspended')
-      if (user.status === 'rejected') return setError('Your registration was not approved')
-      navigate(ROLE_HOME[user.role])
-    } catch (e) {
-      setError((e as Error).message)
+      
+      const getTarget = () => {
+        if (user.role === 'doctor' && user.doctorType === 'private_cabinet') return ROUTES.DOCTOR_DASHBOARD;
+        return ROLE_HOME[user.role] || ROUTES.DOCTOR_PROFILE;
+      };
+
+      navigate(getTarget());
+    } catch (e: any) {
+      setError(e.response?.data?.message || e.message || 'Login failed')
     }
   }
 

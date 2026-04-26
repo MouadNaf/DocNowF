@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/colors.dart';
+import '../../../home/presentation/pages/main_dashboard.dart';
+import '../bloc/auth_bloc.dart';
+import '../bloc/auth_event.dart';
+import '../bloc/auth_state.dart';
 import 'login_page.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -55,9 +60,23 @@ class _RegisterPageState extends State<RegisterPage> {
     final orientation = MediaQuery.of(context).orientation;
     final isLandscape = orientation == Orientation.landscape;
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, state) {
+        if (state is AuthAuthenticated) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const MainDashboard()),
+            (route) => false,
+          );
+        } else if (state is AuthError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+          );
+        }
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -223,6 +242,7 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
         ),
       ),
+    )
     );
   }
 
@@ -306,27 +326,59 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Widget _buildSignUpButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: ElevatedButton(
-        onPressed: _agreeToTerms ? () {} : null,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, state) {
+        return SizedBox(
+          width: double.infinity,
+          height: 56,
+          child: ElevatedButton(
+            onPressed: (_agreeToTerms && state is! AuthLoading) 
+              ? () {
+                  // Format Date to YYYY-MM-DD
+                  String formattedDate = '';
+                  if (_dobController.text.isNotEmpty) {
+                    final parts = _dobController.text.split('/');
+                    if (parts.length == 3) {
+                      formattedDate = '${parts[2]}-${parts[1].padLeft(2, '0')}-${parts[0].padLeft(2, '0')}';
+                    }
+                  }
+
+                  context.read<AuthBloc>().add(
+                    RegisterRequested({
+                      'name': _nameController.text,
+                      'email': _emailController.text,
+                      'password': _passwordController.text,
+                      'password_confirmation': _confirmPasswordController.text,
+                      'role': 'patient',
+                      'gender': _selectedGender?.toLowerCase() ?? 'male',
+                      'city': _cityController.text,
+                      'address': _addressController.text,
+                      'date_of_birth': formattedDate,
+                      'phone_number': _phoneController.text,
+                    }),
+                  );
+                } 
+              : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              elevation: 0,
+            ),
+            child: state is AuthLoading
+                ? const CircularProgressIndicator(color: Colors.white)
+                : const Text(
+                    'Create Account',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
           ),
-          elevation: 0,
-        ),
-        child: const Text(
-          'Create Account',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-      ),
+        );
+      },
     );
   }
 

@@ -18,6 +18,7 @@ class PrivateCabinet extends Model
         'is_verified',
         'bio',
         'consultation_price',
+        'follow_up_price',
         'slot_duration'
     ];
 

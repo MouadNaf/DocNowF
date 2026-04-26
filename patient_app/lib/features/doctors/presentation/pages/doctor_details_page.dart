@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/utils/colors.dart';
 import '../../../home/domain/entities/doctor.dart';
+import '../../../appointments/presentation/pages/book_appointment_page.dart';
 
 class DoctorDetailsPage extends StatefulWidget {
   final Doctor doctor;
@@ -321,7 +322,14 @@ class _DoctorDetailsPageState extends State<DoctorDetailsPage> {
             const SizedBox(width: 16),
             Expanded(
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => BookAppointmentPage(doctor: widget.doctor),
+                    ),
+                  );
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   padding: const EdgeInsets.symmetric(vertical: 16),

@@ -1,0 +1,4 @@
+﻿export function WaitlistItemSecretary({ item, onPromote, onNotify, onRemove }: { item: { patientName: string; patientPhone: string; waitTime: string; priority: number }; onPromote: () => void; onNotify: () => void; onRemove: () => void }) {
+  return <div className="border rounded-lg p-2 flex items-center gap-2"><div className="size-6 rounded-full bg-emerald-100 text-emerald-700 text-xs flex items-center justify-center">{item.priority}</div><div className="flex-1"><p className="text-sm font-medium">{item.patientName}</p><p className="text-xs text-gray-500">{item.patientPhone} - {item.waitTime}</p></div><button className="text-xs border rounded px-2 py-1" onClick={onPromote}>Promouvoir</button><button className="text-xs border rounded px-2 py-1" onClick={onNotify}>Notifier</button><button className="text-xs border border-red-200 text-red-600 rounded px-2 py-1" onClick={onRemove}>Retirer</button></div>
+}
+

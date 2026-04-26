@@ -14,4 +14,13 @@ class LoginRequested extends AuthEvent {
   List<Object> get props => [email, password];
 }
 
+class RegisterRequested extends AuthEvent {
+  final Map<String, dynamic> registerData;
+
+  const RegisterRequested(this.registerData);
+
+  @override
+  List<Object> get props => [registerData];
+}
+
 class LogoutRequested extends AuthEvent {}
