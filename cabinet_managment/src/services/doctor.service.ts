@@ -33,6 +33,16 @@ export interface Availability {
   end_time: string;
 }
 
+export interface Unavailability {
+  id: number;
+  start_date: string;
+  end_date: string;
+  is_closed: boolean;
+  start_time?: string;
+  end_time?: string;
+  reason?: string;
+}
+
 export const doctorService = {
   async getSecretaries(): Promise<any> {
     const res = await api.get('private-cabinets/secretaries');
@@ -97,6 +107,27 @@ export const doctorService = {
 
   async deleteAvailability(id: number) {
     const res = await api.delete(`private-cabinets/availabilities/${id}`);
+    return res.data;
+  },
+
+  async getUnavailabilities() {
+    const res = await api.get('private-cabinets/unavailabilities');
+    return res.data;
+  },
+
+  async createUnavailability(payload: {
+    start_date: string;
+    end_date: string;
+    start_time?: string;
+    end_time?: string;
+    reason?: string;
+  }) {
+    const res = await api.post('private-cabinets/unavailabilities', payload);
+    return res.data;
+  },
+
+  async deleteUnavailability(id: number) {
+    const res = await api.delete(`private-cabinets/unavailabilities/${id}`);
     return res.data;
   },
 };

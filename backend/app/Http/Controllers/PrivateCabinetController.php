@@ -396,6 +396,28 @@ public function createUnavailability(Request $request)
         ], 404);
     }
 
+    $existing = DoctorUnavailability::where('doctor_id', $doctor->id)
+        ->where('private_cabinet_id', $cabinet->id)
+        ->where('start_date', $request->start_date)
+        ->where('end_date', $request->end_date)
+        ->first();
+
+    if ($existing) {
+        $existing->update([
+            'start_time' => $request->start_time,
+            'end_time' => $request->end_time,
+            'reason' => $request->reason,
+            'clinic_id' => null,
+            'collective_cabinet_id' => null,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Unavailability updated successfully',
+            'data' => $existing
+        ], 200);
+    }
+
     $unavailability = DoctorUnavailability::create([
         'doctor_id' => $doctor->id,
         'private_cabinet_id' => $cabinet->id,
