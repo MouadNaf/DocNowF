@@ -186,10 +186,17 @@ public function getAvailabilities()
 public function getSecretaries()
 {
     $doctor = Auth::user()->doctor;
+    if (!$doctor) {
+        return response()->json(['message' => 'Doctor not found'], 404);
+    }
+
     $cabinet = $doctor->privateCabinet;
 
     if (!$cabinet) {
-        return response()->json(['message' => 'Private cabinet not found'], 404);
+        return response()->json([
+            'success' => true,
+            'secretaries' => []
+        ]);
     }
 
     $secretaries = $doctor->secretaries()->with('user')->get();

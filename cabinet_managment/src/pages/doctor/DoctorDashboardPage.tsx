@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { DoctorLayout } from '@/widgets/layout/DoctorLayout';
 import { StatCard } from '@/components/ui/StatCard';
 import { Calendar, Users, XCircle, DollarSign, Building2, MapPin, Phone, Mail, User, Briefcase, DollarSign as DollarIcon, Clock, FileText } from 'lucide-react';
@@ -13,6 +13,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { WILAYAS } from '@/constants/algeria';
+import { doctorService } from '@/services/doctor.service';
 
 const cabinetSchema = z.object({
   name: z.string().min(3, 'Cabinet name must be at least 3 characters'),
@@ -32,6 +33,8 @@ export function DoctorDashboardPage() {
     const { appointments, loading: aptsLoading } = useAppointments(true); // filterByToday = true
     const navigate = useNavigate();
     const [showForm, setShowForm] = useState(false);
+    const [cabinetError, setCabinetError] = useState('');
+    const [checkingCabinet, setCheckingCabinet] = useState(true);
 
     const hasCabinet = user?.doctorType === 'private_cabinet';
 
@@ -42,13 +45,49 @@ export function DoctorDashboardPage() {
         }
     });
 
+    useEffect(() => {
+        const checkCabinet = async () => {
+            try {
+                const res = await doctorService.getCabinet();
+                const hasPrivateCabinet = Boolean(res?.cabinet || res?.data || res?.id);
+                if (hasPrivateCabinet) {
+                    updateUser({ doctorType: 'private_cabinet' });
+                }
+            } catch (err: any) {
+                if (err?.response?.status !== 404) {
+                    console.error('Failed to fetch private cabinet:', err);
+                }
+            } finally {
+                setCheckingCabinet(false);
+            }
+        };
+
+        checkCabinet();
+    }, [updateUser]);
+
     const onCreateCabinet = async (data: CabinetFormValues) => {
-        console.log('Creating cabinet:', data);
-        // Mock update
-        await new Promise(resolve => setTimeout(resolve, 800));
-        updateUser({ doctorType: 'private_cabinet' });
-        setShowForm(false);
+        try {
+            setCabinetError('');
+            await doctorService.createCabinet(data);
+            updateUser({ doctorType: 'private_cabinet' });
+            setShowForm(false);
+            navigate('/doctor/cabinet');
+        } catch (err: any) {
+            setCabinetError(err?.response?.data?.message || 'Failed to create private cabinet.');
+        }
     };
+
+    if (checkingCabinet) {
+        return (
+            <DoctorLayout>
+                <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500">
+                    <div className="bg-white rounded-2xl p-10 border border-gray-100 shadow-sm text-center">
+                        <p className="text-gray-600 font-medium">Loading your private cabinet...</p>
+                    </div>
+                </div>
+            </DoctorLayout>
+        );
+    }
 
     if (!hasCabinet) {
         return (
@@ -114,6 +153,12 @@ export function DoctorDashboardPage() {
                                     <p className="text-sm text-gray-500">Enter the information for your private practice</p>
                                 </div>
                             </div>
+
+                            {cabinetError && (
+                                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                                    {cabinetError}
+                                </div>
+                            )}
 
                             <form onSubmit={handleSubmit(onCreateCabinet)} className="space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

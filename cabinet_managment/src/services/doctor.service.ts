@@ -2,25 +2,32 @@ import api from '@/lib/api';
 
 export interface Secretary {
   id: number;
-  full_name: string;
-  email: string;
+  full_name?: string;
+  email?: string;
   phone?: string;
-  role: string;
-  status: string;
-  employer_id: number;
-  created_at: string;
+  role?: string;
+  status?: string;
+  employer_id?: number;
+  created_at?: string;
+  user?: {
+    id: number;
+    name: string;
+    email: string;
+    phone_number?: string;
+  };
 }
 
 export interface SecretaryCreatePayload {
-  firstName: string;
-  lastName: string;
+  name: string;
   email: string;
   password: string;
-  phone?: string;
+  password_confirmation: string;
+  gender: 'male' | 'female';
+  phone_number: string;
 }
 
 export const doctorService = {
-  async getSecretaries(): Promise<Secretary[]> {
+  async getSecretaries(): Promise<any> {
     const res = await api.get('private-cabinets/secretaries');
     return res.data;
   },

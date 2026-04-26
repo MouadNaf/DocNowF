@@ -15,13 +15,19 @@ export const authService = {
     const firstName = nameParts[0] || '';
     const lastName = nameParts.slice(1).join(' ') || '';
 
+    const hasPrivateCabinet = Boolean(
+      backendUser.role_data?.private_cabinet ||
+      backendUser.role_data?.privateCabinet ||
+      backendUser.role_data?.private_cabinet_id
+    );
+
     const user: AuthUser = {
       id: String(backendUser.id),
       firstName,
       lastName,
       email: backendUser.email,
       role: backendUser.role,
-      doctorType: (backendUser.role_data?.private_cabinet || backendUser.role_data?.privateCabinet) ? 'private_cabinet' : 'doctor_only',
+      doctorType: hasPrivateCabinet ? 'private_cabinet' : 'doctor_only',
       status: 'active',
       isPremium: !!backendUser.role_data?.is_active,
       phone_number: backendUser.phone_number,
