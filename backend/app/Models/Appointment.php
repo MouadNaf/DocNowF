@@ -18,6 +18,8 @@ class Appointment extends Model
         'start_time',
         'status',
         'cancellation_reason',
+        'consultation_fee',
+        'payment_status',
     ];
 
     // Relationships

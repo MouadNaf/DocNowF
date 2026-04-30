@@ -1,71 +1,143 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { DoctorLayout } from '@/widgets/layout/DoctorLayout';
 import { useAppointments } from '@/shared/api/hooks';
 import { useNavigate } from 'react-router-dom';
+import { Search, Calendar, Filter, X, ChevronRight, User, Clock, CheckCircle } from 'lucide-react';
 
 export function DoctorAppointmentsPage() {
-    const { appointments, loading } = useAppointments(false);
+    const [search, setSearch] = useState('');
+    const [date, setDate] = useState('');
+    const [status, setStatus] = useState('');
+
+    const { appointments, loading } = useAppointments({ 
+        patient: search, 
+        date: date || undefined,
+        status: status || undefined
+    });
     const navigate = useNavigate();
+
+    const resetFilters = () => {
+        setSearch('');
+        setDate('');
+        setStatus('');
+    };
 
     return (
         <DoctorLayout>
-            <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-                <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-xl font-bold text-gray-900">All Appointments</h3>
-                    <span className="bg-blue-50 text-blue-600 text-sm font-semibold px-4 py-1.5 rounded-full border border-blue-100">
-                        {appointments.length} Total
-                    </span>
+            <div className="space-y-6">
+                {/* Header & Filters */}
+                <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm space-y-6">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <h2 className="text-2xl font-black text-gray-900">Tous les Rendez-vous</h2>
+                            <p className="text-sm text-gray-500">Gérez et consultez l'historique complet de vos patients.</p>
+                        </div>
+                        <div className="bg-[#f0f9f6] text-[#1D9E75] text-xs font-black px-4 py-2 rounded-full border border-[#d1e9e0] uppercase tracking-wider">
+                            {appointments.length} Total
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div className="md:col-span-2 relative">
+                            <Search className="absolute left-4 top-3.5 text-gray-400" size={18} />
+                            <input 
+                                type="text"
+                                placeholder="Rechercher par nom ou téléphone..."
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                className="w-full h-12 pl-12 pr-4 border-2 border-gray-50 rounded-2xl focus:border-[#1D9E75] focus:ring-0 text-sm transition-all bg-gray-50/50"
+                            />
+                        </div>
+                        <div className="relative">
+                            <Calendar className="absolute left-4 top-3.5 text-gray-400" size={18} />
+                            <input 
+                                type="date"
+                                value={date}
+                                onChange={(e) => setDate(e.target.value)}
+                                className="w-full h-12 pl-12 pr-4 border-2 border-gray-50 rounded-2xl focus:border-[#1D9E75] focus:ring-0 text-sm transition-all bg-gray-50/50"
+                            />
+                        </div>
+                        <button 
+                            onClick={resetFilters}
+                            className="h-12 flex items-center justify-center gap-2 text-gray-500 font-bold text-sm hover:text-red-500 transition-colors"
+                        >
+                            <X size={18} />
+                            Réinitialiser
+                        </button>
+                    </div>
                 </div>
 
-                {loading ? (
-                    <div className="flex justify-center p-4"><p>Loading appointments...</p></div>
-                ) : appointments.length === 0 ? (
-                    <div className="flex justify-center p-4 text-gray-500"><p>No appointments found.</p></div>
-                ) : (
-                    <div className="space-y-4">
-                        {appointments.map((apt) => {
-                            const getStatusColor = (status: string) => {
-                                switch(status) {
-                                  case 'confirmed': return 'bg-blue-100 text-blue-700';
-                                  case 'completed': return 'bg-green-100 text-green-700';
-                                  case 'no_show': return 'bg-red-100 text-red-700';
-                                  case 'arrived': return 'bg-yellow-100 text-yellow-700';
-                                  default: return 'bg-gray-100 text-gray-700';
-                                }
-                            };
+                {/* Results List */}
+                <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm">
+                    {loading ? (
+                        <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                            <div className="animate-spin h-8 w-8 border-4 border-[#1D9E75] border-t-transparent rounded-full mb-4" />
+                            Chargement...
+                        </div>
+                    ) : appointments.length === 0 ? (
+                        <div className="text-center py-12 space-y-4">
+                            <div className="size-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto">
+                                <Search size={24} className="text-gray-300" />
+                            </div>
+                            <p className="text-gray-500 font-medium">Aucun rendez-vous trouvé.</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {appointments.map((apt) => {
+                                const getStatusColor = (status: string) => {
+                                    switch(status) {
+                                      case 'confirmed': return 'bg-blue-50 text-blue-600 border-blue-100';
+                                      case 'completed': return 'bg-emerald-50 text-[#1D9E75] border-emerald-100';
+                                      case 'no_show': return 'bg-red-50 text-red-600 border-red-100';
+                                      case 'arrived': return 'bg-yellow-50 text-yellow-700 border-yellow-100';
+                                      default: return 'bg-gray-50 text-gray-600 border-gray-100';
+                                    }
+                                };
 
-                            const getPaymentColor = (status: string) => status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700';
-
-                            return (
-                                <div 
-                                  key={apt.id} 
-                                  onClick={() => navigate(`/doctor/consultation/${apt.id}`)}
-                                  className="flex items-center justify-between p-4 rounded-xl bg-gray-50 border border-gray-100 cursor-pointer hover:bg-gray-100 transition-colors"
-                                >
-                                    <div className="flex items-center gap-6">
-                                        <div className="text-center w-24">
-                                            <p className="text-sm font-semibold text-gray-500">{apt.date}</p>
-                                            <p className="text-lg font-bold text-gray-900">{apt.time}</p>
+                                return (
+                                    <div 
+                                      key={apt.id} 
+                                      onClick={() => navigate(`/doctor/consultation/${apt.id}`)}
+                                      className="group flex flex-col md:flex-row items-center justify-between p-6 rounded-3xl bg-white border-2 border-gray-50 hover:border-[#1D9E75]/30 hover:bg-[#f9fefd] cursor-pointer transition-all duration-300"
+                                    >
+                                        <div className="flex items-center gap-8 w-full md:w-auto">
+                                            <div className="text-center min-w-[100px] p-3 bg-gray-50 rounded-2xl group-hover:bg-white transition-colors">
+                                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{apt.date}</p>
+                                                <p className="text-xl font-black text-gray-900 flex items-center justify-center gap-1">
+                                                    <Clock size={16} className="text-[#1D9E75]" />
+                                                    {apt.time}
+                                                </p>
+                                            </div>
+                                            
+                                            <div className="flex items-center gap-4">
+                                                <div className="size-12 rounded-2xl bg-[#f0f9f6] text-[#1D9E75] flex items-center justify-center font-black text-lg">
+                                                    {apt.name?.charAt(0) || <User size={20} />}
+                                                </div>
+                                                <div>
+                                                    <p className="text-lg font-bold text-gray-900 group-hover:text-[#1D9E75] transition-colors">
+                                                        {apt.name || `Patient #${apt.patientId}`}
+                                                    </p>
+                                                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        {apt.visitType.replace('_', ' ')}
+                                                    </p>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div className="h-10 w-px bg-gray-200"></div>
-                                        <div>
-                                            <p className="text-base font-bold text-gray-900">{apt.patientId}</p>
-                                            <p className="text-sm font-medium text-gray-500 capitalize">{apt.visitType.replace('_', ' ')}</p>
+
+                                        <div className="flex items-center gap-4 mt-4 md:mt-0 w-full md:w-auto justify-end">
+                                            <span className={`text-[10px] font-black px-4 py-2 rounded-full border uppercase tracking-widest ${getStatusColor(apt.status)}`}>
+                                                {apt.status.replace('_', ' ')}
+                                            </span>
+                                            <div className="size-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 group-hover:bg-[#1D9E75] group-hover:text-white transition-all">
+                                                <ChevronRight size={20} />
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="flex gap-2">
-                                        <span className={`text-xs font-bold px-3 py-1.5 rounded-full ${getStatusColor(apt.status)} capitalize`}>
-                                            {apt.status.replace('_', ' ')}
-                                        </span>
-                                        <span className={`text-xs font-bold px-3 py-1.5 rounded-full ${getPaymentColor(apt.paymentStatus)} capitalize`}>
-                                            {apt.paymentStatus}
-                                        </span>
-                                    </div>
-                                </div>
-                            )
-                        })}
-                    </div>
-                )}
+                                )
+                            })}
+                        </div>
+                    )}
+                </div>
             </div>
         </DoctorLayout>
     );

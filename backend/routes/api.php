@@ -8,6 +8,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\PrivateCabinetController;
 use App\Http\Controllers\ConsultationController;
 use App\Http\Controllers\AppointmentController;
+use App\Http\Controllers\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -69,13 +70,31 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{appointment}', [AppointmentController::class, 'show']);
         Route::put('/{appointme
         nt}', [AppointmentController::class, 'cancel']);
-        Route::get(
-           '/slots/{doctorId}/{date}/{cabinetType}/{cabinetId}',
+        Route::get('/slots/{doctorId}/{date}/{cabinetType}/{cabinetId}',
             [AppointmentController::class, 'generateSlots']
-);
-        Route::get('/', [AppointmentController::class, 'index']);
+        );
+        Route::post('/walk-in', [DashboardController::class, 'walkIn']);
         Route::get('/dashboard/doc', [AppointmentController::class, 'getDoctorDashboard']);
     });
+
+    // Doctor Dashboard & Consultation (Specific Logic)
+    Route::group(['prefix' => 'doctor'], function() {
+        Route::get('/stats', [DashboardController::class, 'stats']);
+        Route::get('/calendar', [DashboardController::class, 'calendar']);
+        Route::get('/appointments/{id}', [DashboardController::class, 'show']);
+        Route::post('/appointments/{id}/consultation', [DashboardController::class, 'saveConsultation']);
+        Route::patch('/appointments/{id}/set-price', [DashboardController::class, 'setPrice']);
+        Route::patch('/appointments/{id}/mark-paid', [DashboardController::class, 'markPaid']);
+        Route::get('/patients/{id}/history', [DashboardController::class, 'patientHistory']);
+    });
+
+    Route::get('/patients', [DashboardController::class, 'patients']);
+    Route::get('/patients/search-by-phone', [DashboardController::class, 'searchByPhone']);
+    Route::post('/patients', [DashboardController::class, 'storePatient']);
+    Route::get('/appointments', [DashboardController::class, 'appointments']);
+    Route::patch('/appointments/{id}/status', [DashboardController::class, 'updateStatus']);
+    Route::patch('/appointments/{id}/note', [DashboardController::class, 'updateNote']);
+    Route::post('/appointments/{id}/payment', [DashboardController::class, 'markPaid']);
 
     /*
     |--------------------------------------------------------------------------
@@ -151,5 +170,8 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/cabinets/{id}/approve', [AdminController::class, 'approveCabinet']);
             Route::patch('/cabinets/{id}/toggle-status', [AdminController::class, 'toggleCabinetStatus']);
             Route::delete('/cabinets/{id}/reject', [AdminController::class, 'rejectCabinet']);
+
+            Route::get('/secretaries', [AdminController::class, 'getAllSecretaries']);
+            Route::get('/patients', [AdminController::class, 'getAllPatients']);
         });
 });

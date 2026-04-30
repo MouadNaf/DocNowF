@@ -30,6 +30,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       about:
           'Dr. Sarah Johnson is a board-certified cardiologist with over 15 years of experience in treating heart conditions. She specializes in preventive cardiology and has helped thousands of patients improve their cardiovascular health.',
       hospital: 'MediCare Hospital, New York',
+      cabinetId: '4',
+      cabinetType: 'private',
       schedule: ['09:00 AM', '10:00 AM', '11:00 AM', '02:00 PM', '03:00 PM'],
     ),
     const Doctor(
@@ -55,6 +57,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       about:
           'Dr. Michael Chen is a general dentist committed to providing excellent dental care in a comfortable environment. He specializes in cosmetic dentistry and oral hygiene.',
       hospital: 'Smile Dental Care',
+      cabinetId: '5',
+      cabinetType: 'private',
       schedule: ['10:00 AM', '11:30 AM', '02:30 PM', '04:00 PM'],
     ),
     const Doctor(
@@ -80,6 +84,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       about:
           'Dr. Emily Williams is a board-certified pediatrician with over 12 years of experience in treating children from newborns to adolescents. She is known for her gentle approach and dedication to children\'s wellness.',
       hospital: 'NYC Children\'s Hospital',
+      cabinetId: '6',
+      cabinetType: 'private',
       schedule: ['09:00 AM', '10:00 AM', '11:00 AM', '02:00 PM', '03:00 PM'],
     ),
     const Doctor(
@@ -95,7 +101,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       phoneNumber: '+1234567894',
       profilePicture: 'https://i.pravatar.cc/150?img=12',
       isVerified: true,
-      isActive: true, rating: '', reviews: '', distance: '', experience: '', patients: '', fee: '', about: '', hospital: '', schedule: [],
+      isActive: true, rating: '', reviews: '', distance: '', experience: '', patients: '', fee: '', about: '', hospital: '', cabinetId: '', cabinetType: 'private', schedule: [],
     ),
   ];
 

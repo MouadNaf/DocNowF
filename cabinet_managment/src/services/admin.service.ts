@@ -80,20 +80,34 @@ export const adminService = {
     return res.data;
   },
 
+  async getAllSecretaries() {
+    const res = await api.get('admin/secretaries');
+    return res.data;
+  },
+
+  async getAllPatients() {
+    const res = await api.get('admin/patients');
+    return res.data;
+  },
+
   async getUsers() {
-    // This will now fetch and combine all professional entities
-    const [doctors, clinics, cabinets, privateCabinets] = await Promise.all([
+    // This will now fetch and combine all professional and user entities
+    const [doctors, clinics, cabinets, privateCabinets, secretaries, patients] = await Promise.all([
       this.getAllDoctors(),
       this.getAllClinics(),
       this.getAllCabinets(),
-      this.getAllPrivateCabinets()
+      this.getAllPrivateCabinets(),
+      this.getAllSecretaries(),
+      this.getAllPatients()
     ]);
 
     return [
       ...doctors.data.map((d: any) => ({ ...d, entity_type: 'doctor' })),
       ...clinics.data.map((c: any) => ({ ...c, entity_type: 'clinic' })),
       ...cabinets.data.map((b: any) => ({ ...b, entity_type: 'cabinet' })),
-      ...privateCabinets.data.map((p: any) => ({ ...p, entity_type: 'private_cabinet', user: p.doctor?.user }))
+      ...privateCabinets.data.map((p: any) => ({ ...p, entity_type: 'private_cabinet', user: p.doctor?.user })),
+      ...secretaries.data.map((s: any) => ({ ...s, entity_type: 'secretary' })),
+      ...patients.data.map((p: any) => ({ ...p, entity_type: 'patient' }))
     ];
   }
 };

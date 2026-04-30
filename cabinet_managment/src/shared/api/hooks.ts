@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getAppointments, getDashboardStats, getPatients, getSchedules, updateAppointmentStatus } from './doctor.api';
+import { getAppointments, getDashboardStats, getPatients, getSchedules, updateAppointmentStatus, getAppointmentDetails, saveConsultation, getPatientHistory } from './doctor.api';
 import type { Appointment } from '@/entities/appointment';
 import type { Patient } from '@/entities/patient';
 import type { Schedule } from '@/entities/schedule';
@@ -23,21 +23,16 @@ export const useDashboardStats = () => {
     return { data, loading };
 };
 
-export const useAppointments = (filterByToday = false) => {
+export const useAppointments = (filters: { date?: string, patient?: string, status?: string } = {}) => {
     const [appointments, setAppointments] = useState<Appointment[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        getAppointments().then(res => {
-            if (filterByToday) {
-                const today = '2023-11-10'; // mocking today date consistent with data
-                setAppointments(res.filter(a => a.date === today));
-            } else {
-                setAppointments(res);
-            }
+        getAppointments(filters).then(res => {
+            setAppointments(res);
             setLoading(false);
         });
-    }, [filterByToday]);
+    }, [JSON.stringify(filters)]);
 
     const changeStatus = async (id: string, status: Appointment['status']) => {
         const updated = await updateAppointmentStatus(id, status);
@@ -59,6 +54,52 @@ export const usePatients = () => {
     }, []);
 
     return { patients, loading };
+};
+
+export const useAppointmentDetails = (id: string | undefined) => {
+    const [data, setData] = useState<{ appointment: any, patient: any } | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (!id) return;
+        getAppointmentDetails(id).then(res => {
+            setData(res);
+            setLoading(false);
+        });
+    }, [id]);
+
+    return { data, loading };
+};
+
+export const useSaveConsultation = () => {
+    const [loading, setLoading] = useState(false);
+
+    const save = async (id: string, data: { diagnosis: string, prescription: string }) => {
+        setLoading(true);
+        try {
+            const res = await saveConsultation(id, data);
+            return res;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return { save, loading };
+};
+
+export const usePatientHistory = (id: string | undefined) => {
+    const [data, setData] = useState<{ patient: any, history: any[] } | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (!id) return;
+        getPatientHistory(id).then(res => {
+            setData(res);
+            setLoading(false);
+        });
+    }, [id]);
+
+    return { data, loading };
 };
 
 export const useSchedules = () => {

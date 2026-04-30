@@ -23,6 +23,8 @@ class DoctorModel extends Doctor {
     required super.fee,
     required super.about,
     required super.hospital,
+    required super.cabinetId,
+    required super.cabinetType,
     required super.schedule,
   });
 
@@ -51,6 +53,8 @@ class DoctorModel extends Doctor {
       fee: json['fee'] ?? '',
       about: json['about'] ?? '',
       hospital: json['hospital'] ?? '',
+      cabinetId: json['cabinet_id']?.toString() ?? '',
+      cabinetType: json['cabinet_type']?.toString() ?? '',
       schedule: (json['schedule'] as List?)?.map((e) => e.toString()).toList() ?? [],
     );
   }

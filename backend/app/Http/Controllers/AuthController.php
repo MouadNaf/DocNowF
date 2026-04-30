@@ -15,11 +15,12 @@ class AuthController extends Controller
 private function getRoleData(User $user)
 {
     return match($user->role) {
-        'doctor' => $user->doctor ? $user->doctor->load('privateCabinet') : null,
-        'clinic' => $user->clinic,
+        'doctor'             => $user->doctor ? $user->doctor->load('privateCabinet') : null,
+        'clinic'             => $user->clinic,
         'collective_cabinet' => $user->collectiveCabinet,
-        'patient' => $user->patient,
-        default => null,
+        'patient'            => $user->patient,
+        'secretary'          => $user->secretary,   // ← includes doctor_id, private_cabinet_id, etc.
+        default              => null,
     };
 }
     public function register(Request $request)

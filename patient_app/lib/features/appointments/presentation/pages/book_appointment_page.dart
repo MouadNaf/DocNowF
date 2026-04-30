@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:patient_app/features/appointments/domain/entities/time_slot.dart';
 
 import '../../../../core/utils/colors.dart';
 import '../../../../injection_container.dart';
@@ -44,11 +45,23 @@ class _BookAppointmentViewState extends State<BookAppointmentView> {
 
   void _generateUpcomingDays() {
     final now = DateTime.now();
-    _upcomingDays = List.generate(14, (index) => now.add(Duration(days: index)));
-    
+    _upcomingDays = List.generate(
+      14,
+      (index) => now.add(Duration(days: index)),
+    );
+
     // Automatically select the first day
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AppointmentBloc>().add(SelectDateEvent(_upcomingDays.first));
+      context.read<AppointmentBloc>().add(
+        SelectDateEvent(
+          _upcomingDays.first,
+          doctorId: widget.doctor.id,
+          cabinetType: widget.doctor.cabinetType.isNotEmpty
+              ? widget.doctor.cabinetType
+              : 'private',
+          cabinetId: widget.doctor.cabinetId,
+        ),
+      );
     });
   }
 
@@ -88,7 +101,9 @@ class _BookAppointmentViewState extends State<BookAppointmentView> {
                 backgroundColor: AppColors.primary,
                 behavior: SnackBarBehavior.floating,
                 margin: const EdgeInsets.all(20),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             );
             Future.delayed(const Duration(seconds: 2), () {
@@ -113,18 +128,52 @@ class _BookAppointmentViewState extends State<BookAppointmentView> {
                   children: [
                     _buildDoctorCard(),
                     _buildDateSelector(state.selectedDate),
-                    _buildTimeSlots(
-                      title: 'Morning',
-                      icon: Icons.wb_sunny_outlined,
-                      slots: ['09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM'],
-                      selectedSlot: state.selectedTimeSlot,
-                    ),
-                    _buildTimeSlots(
-                      title: 'Afternoon',
-                      icon: Icons.access_time,
-                      slots: ['02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM'],
-                      selectedSlot: state.selectedTimeSlot,
-                    ),
+                    if (state.isLoadingSlots)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 40),
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    else if (state.slotsErrorMessage != null)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 40,
+                          horizontal: 20,
+                        ),
+                        child: Center(
+                          child: Text(
+                            state.slotsErrorMessage!,
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 16,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      )
+                    else if (state.availableSlots.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(
+                          vertical: 40,
+                          horizontal: 20,
+                        ),
+                        child: Center(
+                          child: Text(
+                            'No available slots on this date.\nPlease select another date.',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 16,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      )
+                    else
+                      _buildTimeSlots(
+                        title: 'Available Slots',
+                        icon: Icons.access_time,
+                        slots: state.availableSlots,
+                        selectedSlot: state.selectedTimeSlot,
+                      ),
                   ],
                 ),
               ),
@@ -202,7 +251,11 @@ class _BookAppointmentViewState extends State<BookAppointmentView> {
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Row(
             children: const [
-              Icon(Icons.calendar_month_outlined, color: AppColors.primary, size: 24),
+              Icon(
+                Icons.calendar_month_outlined,
+                color: AppColors.primary,
+                size: 24,
+              ),
               SizedBox(width: 8),
               Text(
                 'Select Date',
@@ -224,14 +277,24 @@ class _BookAppointmentViewState extends State<BookAppointmentView> {
             itemCount: _upcomingDays.length,
             itemBuilder: (context, index) {
               final date = _upcomingDays[index];
-              final isSelected = selectedDate != null && 
-                                 date.year == selectedDate.year && 
-                                 date.month == selectedDate.month && 
-                                 date.day == selectedDate.day;
+              final isSelected =
+                  selectedDate != null &&
+                  date.year == selectedDate.year &&
+                  date.month == selectedDate.month &&
+                  date.day == selectedDate.day;
 
               return GestureDetector(
                 onTap: () {
-                  context.read<AppointmentBloc>().add(SelectDateEvent(date));
+                  context.read<AppointmentBloc>().add(
+                    SelectDateEvent(
+                      date,
+                      doctorId: widget.doctor.id,
+                      cabinetType: widget.doctor.cabinetType.isNotEmpty
+                          ? widget.doctor.cabinetType
+                          : 'private',
+                      cabinetId: widget.doctor.cabinetId,
+                    ),
+                  );
                 },
                 child: Container(
                   width: 70,
@@ -240,15 +303,19 @@ class _BookAppointmentViewState extends State<BookAppointmentView> {
                     color: isSelected ? AppColors.primary : Colors.white,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: isSelected ? AppColors.primary : Colors.grey.shade200,
+                      color: isSelected
+                          ? AppColors.primary
+                          : Colors.grey.shade200,
                     ),
-                    boxShadow: isSelected ? [
-                      BoxShadow(
-                        color: AppColors.primary.withOpacity(0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      )
-                    ] : [],
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: AppColors.primary.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ]
+                        : [],
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -258,7 +325,9 @@ class _BookAppointmentViewState extends State<BookAppointmentView> {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          color: isSelected ? Colors.white : AppColors.textSecondary,
+                          color: isSelected
+                              ? Colors.white
+                              : AppColors.textSecondary,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -267,7 +336,9 @@ class _BookAppointmentViewState extends State<BookAppointmentView> {
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
-                          color: isSelected ? Colors.white : AppColors.textPrimary,
+                          color: isSelected
+                              ? Colors.white
+                              : AppColors.textPrimary,
                         ),
                       ),
                     ],
@@ -285,7 +356,7 @@ class _BookAppointmentViewState extends State<BookAppointmentView> {
   Widget _buildTimeSlots({
     required String title,
     required IconData icon,
-    required List<String> slots,
+    required List<TimeSlot> slots,
     required String? selectedSlot,
   }) {
     return Padding(
@@ -319,30 +390,48 @@ class _BookAppointmentViewState extends State<BookAppointmentView> {
             ),
             itemCount: slots.length,
             itemBuilder: (context, index) {
-              final time = slots[index];
-              final isSelected = selectedSlot == time;
-              
+              final slot = slots[index];
+              final isSelected = selectedSlot == slot.time;
+              final isAvailable = slot.isAvailable;
+
               return GestureDetector(
-                onTap: () {
-                  context.read<AppointmentBloc>().add(SelectTimeSlotEvent(time));
-                },
+                onTap: isAvailable
+                    ? () {
+                        context.read<AppointmentBloc>().add(
+                          SelectTimeSlotEvent(slot.time),
+                        );
+                      }
+                    : null,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: isSelected ? AppColors.primary : Colors.white,
+                    color: isSelected
+                        ? AppColors.primary
+                        : (isAvailable ? Colors.white : Colors.grey.shade100),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: isSelected ? AppColors.primary : Colors.grey.shade200,
+                      color: isSelected
+                          ? AppColors.primary
+                          : (isAvailable
+                                ? Colors.grey.shade200
+                                : Colors.grey.shade300),
                     ),
                   ),
                   child: Stack(
                     children: [
                       Center(
                         child: Text(
-                          time,
+                          slot.time,
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: isSelected ? Colors.white : AppColors.textPrimary,
+                            color: isSelected
+                                ? Colors.white
+                                : (isAvailable
+                                      ? AppColors.textPrimary
+                                      : Colors.grey.shade400),
+                            decoration: isAvailable
+                                ? null
+                                : TextDecoration.lineThrough,
                           ),
                         ),
                       ),
@@ -361,7 +450,7 @@ class _BookAppointmentViewState extends State<BookAppointmentView> {
                               size: 18,
                             ),
                           ),
-                        )
+                        ),
                     ],
                   ),
                 ),
@@ -374,7 +463,8 @@ class _BookAppointmentViewState extends State<BookAppointmentView> {
   }
 
   Widget _buildBottomButton(AppointmentState state) {
-    final bool isReady = state.selectedDate != null && state.selectedTimeSlot != null;
+    final bool isReady =
+        state.selectedDate != null && state.selectedTimeSlot != null;
     final bool isLoading = state is AppointmentBookingLoading;
 
     return Positioned(
@@ -406,6 +496,10 @@ class _BookAppointmentViewState extends State<BookAppointmentView> {
                         doctorId: widget.doctor.id,
                         date: state.selectedDate!,
                         timeSlot: state.selectedTimeSlot!,
+                        cabinetType: widget.doctor.cabinetType.isNotEmpty
+                            ? widget.doctor.cabinetType
+                            : 'private',
+                        cabinetId: widget.doctor.cabinetId,
                       ),
                     );
                   }
@@ -423,7 +517,10 @@ class _BookAppointmentViewState extends State<BookAppointmentView> {
                 ? const SizedBox(
                     height: 24,
                     width: 24,
-                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
                   )
                 : const Text(
                     'Confirm Appointment',

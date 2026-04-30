@@ -13,6 +13,8 @@ class BookAppointment {
       doctorId: params.doctorId,
       date: params.date,
       timeSlot: params.timeSlot,
+      cabinetType: params.cabinetType,
+      cabinetId: params.cabinetId,
     );
   }
 }
@@ -21,10 +23,14 @@ class BookAppointmentParams {
   final String doctorId;
   final DateTime date;
   final String timeSlot;
+  final String cabinetType;
+  final String cabinetId;
 
   BookAppointmentParams({
     required this.doctorId,
     required this.date,
     required this.timeSlot,
+    required this.cabinetType,
+    required this.cabinetId,
   });
 }

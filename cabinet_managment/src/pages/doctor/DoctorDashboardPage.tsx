@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { DoctorLayout } from '@/widgets/layout/DoctorLayout';
 import { StatCard } from '@/components/ui/StatCard';
 import { Calendar, Users, XCircle, DollarSign, Building2, MapPin, Phone, Mail, User, Briefcase, DollarSign as DollarIcon, Clock, FileText } from 'lucide-react';
@@ -30,7 +30,7 @@ type CabinetFormValues = z.infer<typeof cabinetSchema>;
 export function DoctorDashboardPage() {
     const { user, updateUser } = useAuthStore();
     const { data: stats, loading: statsLoading } = useDashboardStats();
-    const { appointments, loading: aptsLoading } = useAppointments(true); // filterByToday = true
+    const { appointments, loading: aptsLoading } = useAppointments({ date: new Date().toISOString().split('T')[0] }); 
     const navigate = useNavigate();
     const [showForm, setShowForm] = useState(false);
     const [cabinetError, setCabinetError] = useState('');
@@ -335,7 +335,7 @@ export function DoctorDashboardPage() {
                                             </div>
                                             <div className="h-10 w-px bg-gray-200"></div>
                                             <div>
-                                                <p className="text-base font-bold text-gray-900">{apt.patientId}</p> {/* Would join with patient name in real app */}
+                                                <p className="text-base font-bold text-gray-900">{apt.name || `Patient #${apt.patientId}`}</p>
                                                 <p className="text-sm font-medium text-gray-500 capitalize">{apt.visitType.replace('_', ' ')}</p>
                                             </div>
                                         </div>

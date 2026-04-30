@@ -13,6 +13,7 @@ import 'core/network/network_info.dart';
 import 'features/appointments/domain/repositories/appointment_repository.dart';
 import 'features/appointments/data/repositories/appointment_repository_impl.dart';
 import 'features/appointments/domain/usecases/book_appointment.dart';
+import 'features/appointments/domain/usecases/get_available_slots.dart';
 import 'features/appointments/presentation/bloc/appointment_bloc.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
@@ -62,7 +63,7 @@ Future<void> init() async {
     localDataSource: sl(),
     networkInfo: sl(),
   ));
-  sl.registerLazySingleton<AppointmentRepository>(() => AppointmentRepositoryImpl());
+  sl.registerLazySingleton<AppointmentRepository>(() => AppointmentRepositoryImpl(apiClient: sl()));
   sl.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl(
     remoteDataSource: sl(),
     localDataSource: sl(),
@@ -72,6 +73,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => SearchDoctors(sl()));
   sl.registerLazySingleton(() => GetDoctors(sl()));
   sl.registerLazySingleton(() => BookAppointment(sl()));
+  sl.registerLazySingleton(() => GetAvailableSlots(sl()));
   sl.registerLazySingleton(() => LoginUseCase(sl()));
   sl.registerLazySingleton(() => RegisterUseCase(sl()));
   sl.registerLazySingleton(() => LogoutUseCase(sl()));
@@ -83,7 +85,10 @@ Future<void> init() async {
   ));
   sl.registerFactory(() => HomeBloc(getDoctors: sl()));
   sl.registerFactory(() => SearchBloc());
-  sl.registerFactory(() => AppointmentBloc(bookAppointmentUseCase: sl()));
+  sl.registerFactory(() => AppointmentBloc(
+    bookAppointmentUseCase: sl(),
+    getAvailableSlotsUseCase: sl(),
+  ));
   sl.registerFactory(() => AuthBloc(
     loginUseCase: sl(),
     registerUseCase: sl(),

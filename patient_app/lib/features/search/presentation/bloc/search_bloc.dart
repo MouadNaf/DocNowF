@@ -28,6 +28,8 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       fee: '\$80',
       about: 'Dr. Sarah Johnson is a board-certified cardiologist with over 15 years of experience in treating heart conditions. She specializes in preventive cardiology and has helped thousands of patients improve their cardiovascular health.',
       hospital: 'MediCare Hospital, New York',
+      cabinetId: '7',
+      cabinetType: 'private',
       schedule: ['09:00 AM', '10:00 AM', '11:00 AM', '02:00 PM', '03:00 PM'],
     ),
     const Doctor(
@@ -52,6 +54,8 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       fee: '\$60',
       about: 'Dr. Michael Chen is a general dentist committed to providing excellent dental care in a comfortable environment. He specializes in cosmetic dentistry and oral hygiene.',
       hospital: 'Smile Dental Care',
+      cabinetId: '8',
+      cabinetType: 'private',
       schedule: ['10:00 AM', '11:30 AM', '02:30 PM', '04:00 PM'],
     ),
     const Doctor(
@@ -76,6 +80,8 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       fee: '\$70',
       about: 'Dr. Emily Williams is a board-certified pediatrician with over 12 years of experience in treating children from newborns to adolescents. She is known for her gentle approach and dedication to children\'s wellness.',
       hospital: 'NYC Children\'s Hospital',
+      cabinetId: '9',
+      cabinetType: 'private',
       schedule: ['09:00 AM', '10:00 AM', '11:00 AM', '02:00 PM', '03:00 PM'],
     ),
     const Doctor(
@@ -100,6 +106,8 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       fee: '\$110',
       about: 'Dr. James Anderson is a highly experienced neurologist specializing in complex neurological disorders. He has spent nearly two decades researching movement disorders.',
       hospital: 'Chicago Brain & Spine',
+      cabinetId: '10',
+      cabinetType: 'private',
       schedule: ['08:00 AM', '11:00 AM', '03:00 PM'],
     ),
   ];

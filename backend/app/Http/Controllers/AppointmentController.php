@@ -130,7 +130,7 @@ $slots = array_values($slots);
     $now = Carbon::now('Africa/Algiers');
     $isToday = Carbon::parse($date)->isToday();
 
-    $availableSlots = array_filter($slots, function ($slot) use (
+    $processedSlots = array_map(function ($slot) use (
         $bookedStartTimes,
         $unavailabilities,
         $isToday,
@@ -140,50 +140,56 @@ $slots = array_values($slots);
     ) {
         $slotStart = Carbon::parse($slot['start'], 'Africa/Algiers');
         $slotEnd = Carbon::parse($slot['end'], 'Africa/Algiers');
+        $isAvailable = true;
 
         // A. Remove past slots
         if ($isToday && $slotStart->lte($now)) {
-            return false;
+            $isAvailable = false;
         }
 
         // B. Remove booked slots
-        if (in_array($slotStart->format('H:i'), $bookedStartTimes)) {
-            return false;
+        if ($isAvailable && in_array($slotStart->format('H:i'), $bookedStartTimes)) {
+            $isAvailable = false;
         }
 
-        // C. Remove unavailability overlap (FIXED)
-        foreach ($unavailabilities as $u) {
+        // C. Remove unavailability overlap
+        if ($isAvailable) {
+            foreach ($unavailabilities as $u) {
+                $isGlobal = !$u->private_cabinet_id && !$u->clinic_id && !$u->collective_cabinet_id;
 
-            $isGlobal = !$u->private_cabinet_id && !$u->clinic_id && !$u->collective_cabinet_id;
+                $matchesLocation = match ($cabinetType) {
+                    'private' => $u->private_cabinet_id == $cabinetId,
+                    'clinic' => $u->clinic_id == $cabinetId,
+                    'collective' => $u->collective_cabinet_id == $cabinetId,
+                    default => false
+                };
 
-            $matchesLocation = match ($cabinetType) {
-                'private' => $u->private_cabinet_id == $cabinetId,
-                'clinic' => $u->clinic_id == $cabinetId,
-                'collective' => $u->collective_cabinet_id == $cabinetId,
-                default => false
-            };
+                $unavailStart = Carbon::parse($u->start_time, 'Africa/Algiers');
+                $unavailEnd   = Carbon::parse($u->end_time, 'Africa/Algiers');
 
-            $unavailStart = Carbon::parse($u->start_time, 'Africa/Algiers');
-            $unavailEnd   = Carbon::parse($u->end_time, 'Africa/Algiers');
-
-            // 🔥 TRUE overlap only (NOT touching edges)
-            if (
-                $slotStart->lt($unavailEnd) &&
-                $slotEnd->gt($unavailStart)
-            ) {
                 if (
-                    !$slotStart->equalTo($unavailEnd) &&
-                    !$slotEnd->equalTo($unavailStart)
+                    $slotStart->lt($unavailEnd) &&
+                    $slotEnd->gt($unavailStart)
                 ) {
-                    if ($isGlobal || $matchesLocation) {
-                        return false;
+                    if (
+                        !$slotStart->equalTo($unavailEnd) &&
+                        !$slotEnd->equalTo($unavailStart)
+                    ) {
+                        if ($isGlobal || $matchesLocation) {
+                            $isAvailable = false;
+                            break;
+                        }
                     }
                 }
             }
         }
 
-        return true;
-    });
+        return [
+            'start' => $slot['start'],
+            'end' => $slot['end'],
+            'is_available' => $isAvailable,
+        ];
+    }, $slots);
 
     return response()->json([
         'success' => true,
@@ -191,7 +197,7 @@ $slots = array_values($slots);
             'doctor_name' => $doctor->user->name,
             'date' => $date,
             'location_type' => $cabinetType,
-            'slots' => array_values($availableSlots),
+            'slots' => array_values($processedSlots),
         ]
     ]);
 }

@@ -22,6 +22,8 @@ class Doctor extends Equatable {
   final String fee;
   final String about;
   final String hospital;
+  final String cabinetId;
+  final String cabinetType;
   final List<String> schedule;
 
   const Doctor({
@@ -46,6 +48,8 @@ class Doctor extends Equatable {
     required this.fee,
     required this.about,
     required this.hospital,
+    required this.cabinetId,
+    required this.cabinetType,
     required this.schedule,
   });
 
@@ -53,6 +57,6 @@ class Doctor extends Equatable {
   List<Object?> get props => [
         id, userId, name, email, specialty, gender, city, address, dob,
         phoneNumber, profilePicture, isVerified, isActive, rating, reviews,
-        distance, experience, patients, fee, about, hospital, schedule,
+        distance, experience, patients, fee, about, hospital, cabinetId, cabinetType, schedule,
       ];
 }

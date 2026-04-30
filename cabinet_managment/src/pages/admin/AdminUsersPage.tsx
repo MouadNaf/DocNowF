@@ -12,7 +12,9 @@ import {
   Building2,
   Stethoscope,
   MapPin,
-  Briefcase
+  Briefcase,
+  Users,
+  UserCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { adminService } from '@/services/admin.service';
@@ -94,7 +96,7 @@ export function AdminUsersPage() {
   const stats = useMemo(() => {
     return {
       total: entities.length,
-      pending: entities.filter(e => !e.is_verified).length,
+      pending: entities.filter(e => !['patient', 'secretary'].includes(e.entity_type) && !e.is_verified).length,
       premium: entities.filter(e => e.is_active).length
     };
   }, [entities]);
@@ -150,9 +152,14 @@ export function AdminUsersPage() {
                         "w-10 h-10 rounded-xl flex items-center justify-center font-bold",
                         entity.entity_type === 'doctor' ? "bg-emerald-50 text-emerald-600" : 
                         entity.entity_type === 'private_cabinet' ? "bg-orange-50 text-orange-600" :
+                        entity.entity_type === 'secretary' ? "bg-indigo-50 text-indigo-600" :
+                        entity.entity_type === 'patient' ? "bg-pink-50 text-pink-600" :
                         "bg-blue-50 text-blue-600"
                       )}>
-                        {entity.entity_type === 'doctor' ? <Stethoscope size={18} /> : <Building2 size={18} />}
+                        {entity.entity_type === 'doctor' ? <Stethoscope size={18} /> : 
+                         entity.entity_type === 'secretary' ? <Users size={18} /> :
+                         entity.entity_type === 'patient' ? <UserCircle size={18} /> :
+                         <Building2 size={18} />}
                       </div>
                       <div>
                         <p className="text-sm font-bold text-gray-900">{entity.user?.name || entity.name}</p>
@@ -184,15 +191,19 @@ export function AdminUsersPage() {
                       entity.entity_type === 'doctor' ? "bg-emerald-50 text-emerald-600" : 
                       entity.entity_type === 'clinic' ? "bg-purple-50 text-purple-600" : 
                       entity.entity_type === 'private_cabinet' ? "bg-orange-50 text-orange-600" :
+                      entity.entity_type === 'secretary' ? "bg-indigo-50 text-indigo-600" :
+                      entity.entity_type === 'patient' ? "bg-pink-50 text-pink-600" :
                       "bg-blue-50 text-blue-600"
                     )}>
                       {entity.entity_type === 'doctor' ? 'Médecin' : 
                        entity.entity_type === 'clinic' ? 'Clinique' : 
-                       entity.entity_type === 'private_cabinet' ? 'Cabinet Privé' : 'Cabinet'}
+                       entity.entity_type === 'private_cabinet' ? 'Cabinet Privé' : 
+                       entity.entity_type === 'secretary' ? 'Secrétaire' : 
+                       entity.entity_type === 'patient' ? 'Patient' : 'Cabinet'}
                     </span>
                   </td>
                   <td className="px-6 py-5 text-center">
-                    {entity.is_verified ? (
+                    {(entity.is_verified || ['patient', 'secretary'].includes(entity.entity_type)) ? (
                       <div className="flex items-center justify-center gap-1 text-[#1D9E75]">
                         <CheckCircle size={16} strokeWidth={3} />
                         <span className="text-[10px] font-bold">Vérifié</span>
@@ -207,13 +218,13 @@ export function AdminUsersPage() {
                   <td className="px-6 py-5 text-center">
                     <button 
                       onClick={() => handleTogglePremium(entity)}
-                      disabled={entity.entity_type === 'private_cabinet'}
+                      disabled={['private_cabinet', 'patient', 'secretary'].includes(entity.entity_type)}
                       className={cn(
                         "p-2 rounded-xl transition-all border",
                         entity.is_active 
                           ? "bg-blue-50 text-blue-600 border-blue-100" 
                           : "bg-gray-50 text-gray-400 border-gray-100 grayscale",
-                        entity.entity_type === 'private_cabinet' && "opacity-50 cursor-not-allowed"
+                        ['private_cabinet', 'patient', 'secretary'].includes(entity.entity_type) && "opacity-50 cursor-not-allowed"
                       )}
                     >
                       <Crown size={18} fill={entity.is_active ? "currentColor" : "none"} />
@@ -231,7 +242,7 @@ export function AdminUsersPage() {
                         onClick={() => handleReject(entity)}
                         className={cn(
                           "p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors",
-                          entity.entity_type === 'private_cabinet' && "hidden"
+                          ['private_cabinet', 'patient', 'secretary'].includes(entity.entity_type) && "hidden"
                         )}
                       >
                         <ShieldAlert size={18} />
@@ -266,9 +277,15 @@ export function AdminUsersPage() {
                 <div className="flex items-center gap-4">
                   <div className={cn(
                     "size-14 rounded-2xl flex items-center justify-center shadow-sm",
-                    selectedEntity.entity_type === 'doctor' ? "bg-white text-[#1D9E75]" : "bg-white text-blue-500"
+                    selectedEntity.entity_type === 'doctor' ? "bg-white text-[#1D9E75]" : 
+                    selectedEntity.entity_type === 'secretary' ? "bg-white text-indigo-500" :
+                    selectedEntity.entity_type === 'patient' ? "bg-white text-pink-500" :
+                    "bg-white text-blue-500"
                   )}>
-                    {selectedEntity.entity_type === 'doctor' ? <Stethoscope size={28} /> : <Building2 size={28} />}
+                    {selectedEntity.entity_type === 'doctor' ? <Stethoscope size={28} /> : 
+                     selectedEntity.entity_type === 'secretary' ? <Users size={28} /> :
+                     selectedEntity.entity_type === 'patient' ? <UserCircle size={28} /> :
+                     <Building2 size={28} />}
                   </div>
                   <div>
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Type d'entité</p>
@@ -358,7 +375,7 @@ export function AdminUsersPage() {
               </div>
             </div>
 
-            {!selectedEntity.is_verified && selectedEntity.entity_type !== 'private_cabinet' && (
+            {!selectedEntity.is_verified && !['private_cabinet', 'patient', 'secretary'].includes(selectedEntity.entity_type) && (
               <div className="p-8 border-t border-gray-100 bg-white">
                 <button 
                   onClick={() => handleApprove(selectedEntity)}

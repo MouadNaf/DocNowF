@@ -15,10 +15,8 @@ class DoctorBloc extends Bloc<DoctorEvent, DoctorState> {
   final GetDoctors getDoctors;
   final SearchDoctors searchDoctors;
 
-  DoctorBloc({
-    required this.getDoctors,
-    required this.searchDoctors,
-  }) : super(DoctorInitial()) {
+  DoctorBloc({required this.getDoctors, required this.searchDoctors})
+    : super(DoctorInitial()) {
     on<GetDoctorsEvent>(_onGetDoctors);
     on<SearchDoctorsEvent>(_onSearchDoctors);
     on<GetDoctorDetailsEvent>(_onGetDoctorDetails);
@@ -41,10 +39,12 @@ class DoctorBloc extends Bloc<DoctorEvent, DoctorState> {
 
     final result = await getDoctors(params);
 
-    emit(result.fold(
-      (failure) => DoctorError(_mapFailureToMessage(failure)),
-      (doctors) => DoctorLoaded(doctors),
-    ));
+    emit(
+      result.fold(
+        (failure) => DoctorError(_mapFailureToMessage(failure)),
+        (doctors) => DoctorLoaded(doctors),
+      ),
+    );
   }
 
   Future<void> _onSearchDoctors(
@@ -54,10 +54,12 @@ class DoctorBloc extends Bloc<DoctorEvent, DoctorState> {
     emit(DoctorLoading());
     final result = await searchDoctors(event.query);
 
-    emit(result.fold(
-      (failure) => DoctorError(_mapFailureToMessage(failure)),
-      (doctors) => DoctorLoaded(doctors),
-    ));
+    emit(
+      result.fold(
+        (failure) => DoctorError(_mapFailureToMessage(failure)),
+        (doctors) => DoctorLoaded(doctors),
+      ),
+    );
   }
 
   Future<void> _onGetDoctorDetails(
@@ -86,9 +88,11 @@ class DoctorBloc extends Bloc<DoctorEvent, DoctorState> {
       experience: '15 years',
       patients: '2,500+',
       fee: '\$80',
-      about: 'Dr. Sarah Johnson is a board-certified cardiologist...',
       hospital: 'MediCare Hospital, New York',
+      cabinetId: '3',
+      cabinetType: 'private',
       schedule: const ['09:00 AM', '10:00 AM', '11:00 AM'],
+      about: '',
     );
 
     emit(DoctorDetailsLoaded(mockDoctor));

@@ -39,6 +39,8 @@ class DoctorLocalDataSourceImpl implements DoctorLocalDataSource {
           fee: '\$70',
           about: 'Dr. Emily Williams is a board-certified pediatrician...',
           hospital: 'NYC Children\'s Hospital',
+          cabinetId: '1',
+          cabinetType: 'private',
           schedule: ['09:00 AM', '10:00 AM'],
         ),
         const Doctor(
@@ -63,6 +65,8 @@ class DoctorLocalDataSourceImpl implements DoctorLocalDataSource {
           fee: '\$120',
           about: 'Dr. Michael Chen is a highly experienced cardiologist...',
           hospital: 'Smile Health Care',
+          cabinetId: '2',
+          cabinetType: 'private',
           schedule: ['10:00 AM', '02:00 PM'],
         ),
       ];

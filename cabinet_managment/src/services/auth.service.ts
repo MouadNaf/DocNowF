@@ -34,6 +34,10 @@ export const authService = {
       city: backendUser.city,
       address: backendUser.address,
       speciality: backendUser.role_data?.speciality,
+      // For secretary: store their assigned doctor_id so pages can query the API
+      doctorId: backendUser.role === 'secretary'
+        ? String(backendUser.role_data?.doctor_id ?? '')
+        : undefined,
     };
 
     return { user, token };

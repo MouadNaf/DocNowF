@@ -1,44 +1,55 @@
+import api from '@/lib/api';
 import type { Appointment } from '@/entities/appointment';
 import type { Patient } from '@/entities/patient';
-import { mockAppointments, mockPatients, mockSchedules, mockMedicalRecords } from '@/lib/mock/auth.mock';
 
-const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
-
-export const getAppointments = async (): Promise<Appointment[]> => {
-  await delay(500);
-  return [...mockAppointments];
+export const getAppointments = async (filters: { date?: string, patient?: string, status?: string } = {}): Promise<Appointment[]> => {
+  const res = await api.get('/appointments', { params: filters });
+  return res.data.data;
 };
 
 export const getPatients = async (): Promise<Patient[]> => {
-  await delay(500);
-  return [...mockPatients];
+  const res = await api.get('/patients');
+  return res.data.data;
 };
 
 export const updateAppointmentStatus = async (id: string, status: Appointment['status']): Promise<Appointment> => {
-  await delay(400);
-  const apt = mockAppointments.find(a => a.id === id);
-  if (!apt) throw new Error('Appointment not found');
-  apt.status = status;
-  return { ...apt };
+  const res = await api.patch(`/appointments/${id}/status`, { status });
+  return res.data.data;
 };
 
 export const getDashboardStats = async () => {
-    await delay(300);
-    const today = '2023-11-10'; // mock today's date based on our mock data
-    const todayApts = mockAppointments.filter(a => a.date === today);
-    const totalPatients = mockPatients.length;
-    const noShows = mockAppointments.filter(a => a.status === 'no_show').length;
-    const revenueToday = todayApts.filter(a => a.paymentStatus === 'paid').reduce((acc, curr) => acc + curr.consultationFee, 0);
-
-    return {
-        todayAppointments: todayApts.length,
-        totalPatients,
-        noShows,
-        revenueToday
-    };
+    const res = await api.get('/doctor/stats');
+    return res.data;
 };
 
 export const getSchedules = async () => {
-    await delay(300);
-    return [...mockSchedules];
+    const res = await api.get('/doctor/calendar', { 
+        params: { date: new Date().toISOString().split('T')[0] } 
+    });
+    return res.data.data;
+};
+
+export const getAppointmentDetails = async (id: string) => {
+    const res = await api.get(`/doctor/appointments/${id}`);
+    return res.data;
+};
+
+export const saveConsultation = async (id: string, data: { diagnosis: string, prescription: string }) => {
+    const res = await api.post(`/doctor/appointments/${id}/consultation`, data);
+    return res.data;
+};
+
+export const getPatientHistory = async (id: string) => {
+    const res = await api.get(`/doctor/patients/${id}/history`);
+    return res.data;
+};
+
+export const setAppointmentPrice = async (id: string, price: number) => {
+    const res = await api.patch(`/doctor/appointments/${id}/set-price`, { price });
+    return res.data;
+};
+
+export const markAppointmentPaid = async (id: string) => {
+    const res = await api.patch(`/doctor/appointments/${id}/mark-paid`);
+    return res.data;
 };

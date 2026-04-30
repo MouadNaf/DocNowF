@@ -7,6 +7,8 @@ use App\Models\Doctor;
 use App\Models\Clinic;
 use App\Models\CollectiveCabinet;
 use App\Models\PrivateCabinet;
+use App\Models\Patient;
+use App\Models\Secretary;
 
 class AdminController extends Controller
 {
@@ -134,5 +136,19 @@ class AdminController extends Controller
         if (!$cabinet) return response()->json(['message' => 'Cabinet not found'], 404);
         $cabinet->user->delete();
         return response()->json(['success' => true]);
+    }
+
+    /* SECRETARIES */
+    public function getAllSecretaries()
+    {
+        $secretaries = Secretary::with('user')->get();
+        return response()->json(['success' => true, 'data' => $secretaries]);
+    }
+
+    /* PATIENTS */
+    public function getAllPatients()
+    {
+        $patients = Patient::with('user')->get();
+        return response()->json(['success' => true, 'data' => $patients]);
     }
 }
