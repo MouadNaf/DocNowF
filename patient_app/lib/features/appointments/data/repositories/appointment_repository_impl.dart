@@ -4,8 +4,10 @@ import 'package:patient_app/features/appointments/domain/entities/time_slot.dart
 import '../../../../core/error/failures.dart';
 import '../../../../core/network/api_client.dart';
 import '../../domain/entities/appointment.dart';
+import '../../domain/entities/patient_appointment.dart';
 import '../../domain/repositories/appointment_repository.dart';
 import '../models/appointment_model.dart';
+import '../models/patient_appointment_model.dart';
 import 'package:intl/intl.dart';
 
 class AppointmentRepositoryImpl implements AppointmentRepository {
@@ -86,6 +88,45 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
       } else {
         return const Left(ServerFailure('Failed to fetch available slots'));
       }
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<PatientAppointment>>> getPatientAppointments() async {
+    try {
+      final response = await apiClient.get('/appointments/my');
+      if (response.statusCode == 200) {
+        final decoded = json.decode(response.body) as Map<String, dynamic>;
+        final rows = (decoded['data'] as List<dynamic>? ?? [])
+            .whereType<Map<String, dynamic>>()
+            .toList();
+
+        final appointments = rows
+            .map(PatientAppointmentModel.fromJson)
+            .toList(growable: false);
+
+        return Right(appointments);
+      }
+
+      final data = json.decode(response.body);
+      return Left(ServerFailure(data['message'] ?? 'Failed to fetch appointments'));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> cancelAppointment(String appointmentId) async {
+    try {
+      final response = await apiClient.put('/appointments/$appointmentId', body: {});
+      if (response.statusCode == 200) {
+        return const Right(null);
+      }
+
+      final data = json.decode(response.body);
+      return Left(ServerFailure(data['message'] ?? 'Failed to cancel appointment'));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }

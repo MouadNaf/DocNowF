@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/utils/colors.dart';
 import '../../../../core/widgets/bottom_navigation_bar.dart';
+import '../../../../injection_container.dart';
 import '../../../home/domain/entities/doctor.dart';
 import 'doctor_details_page.dart';
+import '../bloc/doctor_bloc.dart';
 
 import '../../../../core/utils/navigation_service.dart';
 
@@ -16,6 +19,7 @@ class AllDoctorsPage extends StatefulWidget {
 }
 
 class _AllDoctorsPageState extends State<AllDoctorsPage> {
+  late final DoctorBloc _doctorBloc;
   String _selectedSort = 'Highest Rating';
   String _selectedAvailability = 'Available Today';
   String _selectedPriceRange = '';
@@ -24,75 +28,117 @@ class _AllDoctorsPageState extends State<AllDoctorsPage> {
   bool _showFilters = false;
 
   @override
+  void initState() {
+    super.initState();
+    _doctorBloc = sl<DoctorBloc>();
+    _loadDoctors();
+  }
+
+  void _loadDoctors() {
+    _doctorBloc.add(
+      GetDoctorsEvent(
+        specialty:
+            widget.initialCategory == null ||
+                widget.initialCategory == 'All Doctors'
+            ? null
+            : widget.initialCategory,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _doctorBloc.close();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+    return BlocProvider.value(
+      value: _doctorBloc,
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.arrow_back,
+                  color: AppColors.textPrimary,
+                  size: 20,
+                ),
               ),
-              child: const Icon(Icons.arrow_back, color: AppColors.textPrimary, size: 20),
             ),
           ),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.initialCategory ?? 'All Doctors',
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),
+              ),
+              Text(
+                '12 doctors available',
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+              ),
+            ],
+          ),
         ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              widget.initialCategory ?? 'All Doctors',
-              style: const TextStyle(
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
+        body: RefreshIndicator(
+          color: AppColors.primary,
+          onRefresh: () async {
+            final future = _doctorBloc.stream.firstWhere(
+              (s) => s is DoctorLoaded || s is DoctorError,
+            );
+            _loadDoctors();
+            await future;
+          },
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+            SliverToBoxAdapter(
+              child: Column(
+                children: [
+                  _buildSortAndViewOptions(),
+                  const SizedBox(height: 16),
+                  if (_showFilters) ...[
+                    _buildFilterSection(),
+                    const SizedBox(height: 16),
+                  ],
+                ],
               ),
             ),
-            Text(
-              '12 doctors available',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 14,
-              ),
+            BlocBuilder<DoctorBloc, DoctorState>(
+              builder: (context, state) => _buildDoctorsList(state),
             ),
           ],
-        ),
-      ),
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: Column(
-              children: [
-                _buildSortAndViewOptions(),
-                const SizedBox(height: 16),
-                if (_showFilters) ...[
-                  _buildFilterSection(),
-                  const SizedBox(height: 16),
-                ],
-              ],
-            ),
           ),
-          _buildDoctorsList(),
-        ],
-      ),
-      bottomNavigationBar: CustomBottomNavigationBar(
-        currentIndex: NavigationService.currentIndex.value,
-        onTap: (index) {
-          NavigationService.changeTab(index, context);
-        },
+        ),
+        bottomNavigationBar: CustomBottomNavigationBar(
+          currentIndex: NavigationService.currentIndex.value,
+          onTap: (index) {
+            NavigationService.changeTab(index, context);
+          },
+        ),
       ),
     );
   }
@@ -120,7 +166,10 @@ class _AllDoctorsPageState extends State<AllDoctorsPage> {
                 children: [
                   const Text(
                     'Sort by:',
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 13,
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -133,12 +182,20 @@ class _AllDoctorsPageState extends State<AllDoctorsPage> {
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                         ),
-                        items: ['Highest Rating', 'Lowest Rating', 'Nearest', 'Price: Low to High']
-                            .map((sort) => DropdownMenuItem(
-                                  value: sort,
-                                  child: Text(sort),
-                                ))
-                            .toList(),
+                        items:
+                            [
+                                  'Highest Rating',
+                                  'Lowest Rating',
+                                  'Nearest',
+                                  'Price: Low to High',
+                                ]
+                                .map(
+                                  (sort) => DropdownMenuItem(
+                                    value: sort,
+                                    child: Text(sort),
+                                  ),
+                                )
+                                .toList(),
                         onChanged: (value) {
                           setState(() {
                             _selectedSort = value!;
@@ -223,7 +280,11 @@ class _AllDoctorsPageState extends State<AllDoctorsPage> {
     );
   }
 
-  Widget _buildFilterGroup(String title, List<String> options, String selected) {
+  Widget _buildFilterGroup(
+    String title,
+    List<String> options,
+    String selected,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -261,16 +322,22 @@ class _AllDoctorsPageState extends State<AllDoctorsPage> {
                       color: isSelected ? AppColors.primary : Colors.white,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                        color: isSelected ? AppColors.primary : AppColors.border,
+                        color: isSelected
+                            ? AppColors.primary
+                            : AppColors.border,
                       ),
                     ),
                     child: Text(
                       option,
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: isSelected ? Colors.white : AppColors.textPrimary,
+                        color: isSelected
+                            ? Colors.white
+                            : AppColors.textPrimary,
                         fontSize: 12,
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.w500,
                       ),
                     ),
                   ),
@@ -283,115 +350,35 @@ class _AllDoctorsPageState extends State<AllDoctorsPage> {
     );
   }
 
-  Widget _buildDoctorsList() {
-    final doctors = [
-      const Doctor(
-        id: '1',
-        userId: 'u1',
-        name: 'Dr. Emily Williams',
-        email: 'emily@example.com',
-        specialty: 'Pediatrician',
-        gender: 'Female',
-        city: 'New York',
-        address: '123 Medical Ave',
-        dob: '1985-05-20',
-        phoneNumber: '+1234567890',
-        profilePicture: 'https://i.pravatar.cc/150?img=11',
-        isVerified: true,
-        isActive: true,
-        rating: '5.0',
-        reviews: '89',
-        distance: '3.8 km',
-        experience: '12 years',
-        patients: '1,200+',
-        fee: '\$70',
-        about: 'Dr. Emily Williams is a board-certified pediatrician with over 12 years of experience in treating children from newborns to adolescents. She is known for her gentle approach and dedication to children\'s wellness.',
-        hospital: 'NYC Children\'s Hospital',
-        cabinetId: '11',
-        cabinetType: 'private',
-        schedule: ['09:00 AM', '10:00 AM', '11:00 AM', '02:00 PM', '03:00 PM'],
-      ),
-      const Doctor(
-        id: '2',
-        userId: 'u2',
-        name: 'Dr. Amanda Foster',
-        email: 'amanda@example.com',
-        specialty: 'Gynecologist',
-        gender: 'Female',
-        city: 'New York',
-        address: '456 Women Care St',
-        dob: '1988-08-15',
-        phoneNumber: '+1234567891',
-        profilePicture: 'https://i.pravatar.cc/150?img=5',
-        isVerified: true,
-        isActive: true,
-        rating: '5.0',
-        reviews: '176',
-        distance: '2.1 km',
-        experience: '8 years',
-        patients: '800+',
-        fee: '\$90',
-        about: 'Dr. Amanda Foster specializes in women\'s reproductive health. She provides comprehensive care for women through all stages of life, from adolescence through menopause.',
-        hospital: 'Central Health Clinic',
-        cabinetId: '12',
-        cabinetType: 'private',
-        schedule: ['08:00 AM', '10:00 AM', '01:00 PM', '04:00 PM'],
-      ),
-      const Doctor(
-        id: '3',
-        userId: 'u3',
-        name: 'Dr. Sarah Johnson',
-        email: 'sarah@example.com',
-        specialty: 'Cardiologist',
-        gender: 'Female',
-        city: 'Boston',
-        address: '789 Heart Center',
-        dob: '1980-03-10',
-        phoneNumber: '+1234567892',
-        profilePicture: 'https://i.pravatar.cc/150?img=9',
-        isVerified: true,
-        isActive: true,
-        rating: '4.9',
-        reviews: '127',
-        distance: '2.5 km',
-        experience: '15 years',
-        patients: '2,500+',
-        fee: '\$80',
-        about: 'Dr. Sarah Johnson is a board-certified cardiologist with over 15 years of experience in treating heart conditions. She specializes in preventive cardiology and has helped thousands of patients improve their cardiovascular health.',
-        hospital: 'MediCare Hospital, New York',
-        cabinetId: '13',
-        cabinetType: 'private',
-        schedule: ['09:00 AM', '10:00 AM', '11:00 AM', '02:00 PM', '03:00 PM', '04:00 PM'],
-      ),
-      const Doctor(
-        id: '4',
-        userId: 'u4',
-        name: 'Dr. Michael Chen',
-        email: 'michael@example.com',
-        specialty: 'Dentist',
-        gender: 'Male',
-        city: 'San Francisco',
-        address: '321 Dental Way',
-        dob: '1990-11-25',
-        phoneNumber: '+1234567893',
-        profilePicture: 'https://i.pravatar.cc/150?img=15',
-        isVerified: true,
-        isActive: true,
-        rating: '4.8',
-        reviews: '203',
-        distance: '1.2 km',
-        experience: '6 years',
-        patients: '1,500+',
-        fee: '\$60',
-        about: 'Dr. Michael Chen is a general dentist committed to providing excellent dental care in a comfortable environment. He specializes in cosmetic dentistry and oral hygiene.',
-        hospital: 'Smile Dental Care',
-        cabinetId: '14',
-        cabinetType: 'private',
-        schedule: ['10:00 AM', '11:30 AM', '02:30 PM', '04:00 PM'],
-      ),
-    ];
-
-    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+  Widget _buildDoctorsList(DoctorState state) {
+    if (state is DoctorLoading) {
+      return const SliverFillRemaining(
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (state is DoctorError) {
+      return SliverFillRemaining(
+        child: Center(
+          child: Text(
+            state.message,
+            style: const TextStyle(color: AppColors.textSecondary),
+          ),
+        ),
+      );
+    }
+    final doctors = state is DoctorLoaded ? state.doctors : <Doctor>[];
+    if (doctors.isEmpty) {
+      return const SliverFillRemaining(
+        child: Center(
+          child: Text(
+            'No doctors found.',
+            style: TextStyle(color: AppColors.textSecondary),
+          ),
+        ),
+      );
+    }
+    final isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
 
     if (_isGridView) {
       return SliverPadding(
@@ -500,7 +487,11 @@ class _AllDoctorsPageState extends State<AllDoctorsPage> {
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      const Icon(Icons.star_rounded, color: AppColors.star, size: 16),
+                      const Icon(
+                        Icons.star_rounded,
+                        color: AppColors.star,
+                        size: 16,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         '${doctor.rating} (${doctor.reviews})',
@@ -511,11 +502,18 @@ class _AllDoctorsPageState extends State<AllDoctorsPage> {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      const Icon(Icons.location_on_outlined, color: AppColors.textSecondary, size: 14),
+                      const Icon(
+                        Icons.location_on_outlined,
+                        color: AppColors.textSecondary,
+                        size: 14,
+                      ),
                       const SizedBox(width: 2),
                       Text(
                         doctor.distance,
-                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
@@ -628,7 +626,11 @@ class _AllDoctorsPageState extends State<AllDoctorsPage> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.star_rounded, color: AppColors.star, size: 14),
+                    const Icon(
+                      Icons.star_rounded,
+                      color: AppColors.star,
+                      size: 14,
+                    ),
                     const SizedBox(width: 2),
                     Text(
                       doctor.rating,

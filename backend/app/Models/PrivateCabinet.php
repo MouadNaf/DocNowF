@@ -49,7 +49,8 @@ class PrivateCabinet extends Model
 
     public function secretaries()
     {
-        return $this->hasMany(Secretary::class);
+        // Secretaries are linked to the doctor, not directly to private_cabinet_id.
+        return $this->hasMany(Secretary::class, 'doctor_id', 'doctor_id');
     }
 
     

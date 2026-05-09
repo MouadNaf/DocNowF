@@ -1,20 +1,13 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../../features/auth/data/datasources/auth_local_data_source.dart';
+import '../config/app_config.dart';
 
 class ApiClient {
   final http.Client client;
   final AuthLocalDataSource localDataSource;
   
-  // Use 10.0.2.2 for Android emulator, and 127.0.0.1 for Web
-  static String get baseUrl {
-    if (kIsWeb) {
-      return 'http://127.0.0.1:8000/api';
-    } else {
-      return 'http://10.0.2.2:8000/api';
-    }
-  }
+  static const String baseUrl = AppConfig.apiBaseUrl;
 
   ApiClient({required this.client, required this.localDataSource});
 
@@ -41,6 +34,15 @@ class ApiClient {
     return await client.get(
       Uri.parse('$baseUrl$endpoint'),
       headers: headers,
+    );
+  }
+
+  Future<http.Response> put(String endpoint, {Map<String, dynamic>? body}) async {
+    final headers = await _getHeaders();
+    return await client.put(
+      Uri.parse('$baseUrl$endpoint'),
+      headers: headers,
+      body: body != null ? json.encode(body) : null,
     );
   }
 }

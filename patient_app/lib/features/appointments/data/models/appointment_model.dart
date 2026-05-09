@@ -11,13 +11,16 @@ class AppointmentModel extends Appointment {
   });
 
   factory AppointmentModel.fromJson(Map<String, dynamic> json) {
+    final dateRaw = (json['appointment_date'] ?? json['date'] ?? '').toString();
+    final timeRaw = (json['start_time'] ?? json['time_slot'] ?? '').toString();
+
     return AppointmentModel(
-      id: json['id'],
-      doctorId: json['doctor_id'],
-      patientId: json['patient_id'],
-      date: DateTime.parse(json['date']),
-      timeSlot: json['time_slot'],
-      status: json['status'],
+      id: json['id'].toString(),
+      doctorId: json['doctor_id'].toString(),
+      patientId: json['patient_id'].toString(),
+      date: DateTime.tryParse(dateRaw) ?? DateTime.now(),
+      timeSlot: timeRaw,
+      status: (json['status'] ?? 'confirmed').toString(),
     );
   }
 

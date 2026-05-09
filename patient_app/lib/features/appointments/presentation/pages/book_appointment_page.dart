@@ -5,8 +5,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:patient_app/features/appointments/domain/entities/time_slot.dart';
 
 import '../../../../core/utils/colors.dart';
+import '../../../../core/utils/navigation_service.dart';
 import '../../../../injection_container.dart';
 import '../../../home/domain/entities/doctor.dart';
+import '../../../home/presentation/pages/main_dashboard.dart';
 import '../bloc/appointment_bloc.dart';
 import 'package:patient_app/features/appointments/presentation/bloc/appointment_event.dart';
 import 'package:patient_app/features/appointments/presentation/bloc/appointment_state.dart';
@@ -106,9 +108,11 @@ class _BookAppointmentViewState extends State<BookAppointmentView> {
                 ),
               ),
             );
-            Future.delayed(const Duration(seconds: 2), () {
-              Navigator.pop(context);
-            });
+            NavigationService.currentIndex.value = 1;
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => const MainDashboard()),
+              (route) => false,
+            );
           } else if (state is AppointmentBookingError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(

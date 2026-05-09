@@ -7,10 +7,83 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
+private function resolveProfilePictureUrl(?string $profilePicture): ?string
+{
+    if (!$profilePicture) {
+        return null;
+    }
 
+    if (str_starts_with($profilePicture, 'http://') || str_starts_with($profilePicture, 'https://')) {
+        return $profilePicture;
+    }
+
+    return asset("storage/{$profilePicture}");
+}
+
+private function uploadProfilePicture($file): string
+{
+    $cloudName = env('CLOUDINARY_CLOUD_NAME');
+    $apiKey = env('CLOUDINARY_API_KEY');
+    $apiSecret = env('CLOUDINARY_API_SECRET');
+
+    if (!$cloudName || !$apiKey || !$apiSecret) {
+        throw new \RuntimeException('Cloudinary credentials are missing.');
+    }
+
+    try {
+        $timestamp = time();
+        $folder = 'cabinet_management/profiles';
+        $signatureBase = "folder={$folder}&timestamp={$timestamp}{$apiSecret}";
+        $signature = sha1($signatureBase);
+
+        $endpoint = "https://api.cloudinary.com/v1_1/{$cloudName}/image/upload";
+        $postFields = [
+            'file' => new \CURLFile($file->getRealPath()),
+            'api_key' => $apiKey,
+            'timestamp' => $timestamp,
+            'folder' => $folder,
+            'signature' => $signature,
+        ];
+
+        $ch = curl_init($endpoint);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
+        // Temporary workaround for local Windows OpenSSL CA chain issues.
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+
+        $responseBody = curl_exec($ch);
+        $curlError = curl_error($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($responseBody === false || $curlError) {
+            throw new \RuntimeException('Cloudinary cURL error: ' . $curlError);
+        }
+
+        $decoded = json_decode($responseBody, true);
+        if ($httpCode >= 400 || !isset($decoded['secure_url'])) {
+            $message = $decoded['error']['message'] ?? 'Unknown Cloudinary error';
+            throw new \RuntimeException("Cloudinary upload failed ({$httpCode}): {$message}");
+        }
+
+        return $decoded['secure_url'];
+    } catch (\Throwable $e) {
+        Log::error('Cloudinary profile upload failed', [
+            'message' => $e->getMessage(),
+            'realPath_exists' => method_exists($file, 'getRealPath') ? (bool) $file->getRealPath() : null,
+            'originalName' => method_exists($file, 'getClientOriginalName') ? $file->getClientOriginalName() : null,
+        ]);
+
+        throw new \RuntimeException('Failed to upload profile image to Cloudinary: ' . $e->getMessage(), 0, $e);
+    }
+}
 
 private function getRoleData(User $user)
 {
@@ -63,7 +136,7 @@ private function getRoleData(User $user)
 
         // 3. Upload profile picture
         $profilePath = $request->hasFile('profile_picture')
-            ? $request->file('profile_picture')->store('profile_pictures', 'public')
+            ? $this->uploadProfilePicture($request->file('profile_picture'))
             : null;
 
         // 4. Store documents
@@ -160,8 +233,8 @@ private function getRoleData(User $user)
                 'name' => $user->name,
                 'email' => $user->email,
                 'role' => $user->role,
-                'profile_picture' => $user->profile_picture 
-                    ? asset("storage/{$user->profile_picture}") 
+                'profile_picture' => $user->profile_picture
+                    ? $this->resolveProfilePictureUrl($user->profile_picture)
                     : null,
                 'role_data' => $this->getRoleData($user),
             ],
@@ -232,8 +305,8 @@ public function login(Request $request)
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
-            'profile_picture' => $user->profile_picture 
-                ? asset("storage/{$user->profile_picture}") 
+            'profile_picture' => $user->profile_picture
+                ? $this->resolveProfilePictureUrl($user->profile_picture)
                 : null,
             'role'=>$user->role,
             'role_data'=>$this->getRoleData($user),
@@ -268,11 +341,11 @@ public function updateProfile(Request $request)
 
     // Handle Profile Picture
     if ($request->hasFile('profile_picture')) {
-        $path = $request->file('profile_picture')->store('profile_pictures', 'public');
-        $user->profile_picture = $path;
+        $user->profile_picture = $this->uploadProfilePicture($request->file('profile_picture'));
     }
 
-    $user->update($request->only(['name', 'phone_number', 'city', 'address', 'gender', 'date_of_birth']));
+    $user->fill($request->only(['name', 'phone_number', 'city', 'address', 'gender', 'date_of_birth']));
+    $user->save();
 
     // Handle Doctor Speciality
     if ($user->role === 'doctor' && $request->has('speciality')) {
@@ -292,8 +365,8 @@ public function updateProfile(Request $request)
             'gender' => $user->gender,
             'date_of_birth' => $user->date_of_birth,
             'role' => $user->role,
-            'profile_picture' => $user->profile_picture 
-                ? asset("storage/{$user->profile_picture}") 
+            'profile_picture' => $user->profile_picture
+                ? $this->resolveProfilePictureUrl($user->profile_picture)
                 : null,
             'role_data' => $this->getRoleData($user),
         ]

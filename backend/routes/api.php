@@ -9,6 +9,8 @@ use App\Http\Controllers\PrivateCabinetController;
 use App\Http\Controllers\ConsultationController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\UploadController;
+use App\Http\Controllers\ChatController;
 
 /*
 |--------------------------------------------------------------------------
@@ -31,6 +33,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/doctors', [\App\Http\Controllers\PublicDoctorController::class, 'index']);
 
+    // ── AI Chatbot ──────────────────────────────────────────────
+    Route::post('/chat', [ChatController::class, 'chat']);
+    // ────────────────────────────────────────────────────────────
+
     Route::get('/me', function (Request $request) {
         $user = $request->user();
         $authController = new \App\Http\Controllers\AuthController();
@@ -50,13 +56,16 @@ Route::middleware('auth:sanctum')->group(function () {
             'date_of_birth' => $user->date_of_birth,
             'role' => $user->role,
             'profile_picture' => $user->profile_picture 
-                ? asset("storage/{$user->profile_picture}") 
+                ? (str_starts_with($user->profile_picture, 'http') 
+                    ? $user->profile_picture 
+                    : asset("storage/{$user->profile_picture}"))
                 : null,
             'role_data' => $roleData,
         ]);
     });
 
     Route::put('/profile', [AuthController::class, 'updateProfile']);
+    Route::post('/upload', [UploadController::class, 'upload']);
 
     /*
     |--------------------------------------------------------------------------
@@ -67,12 +76,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('appointments')->group(function () {
 
         Route::post('/', [AppointmentController::class, 'store']);
-        Route::get('/{appointment}', [AppointmentController::class, 'show']);
-        Route::put('/{appointme
-        nt}', [AppointmentController::class, 'cancel']);
+        Route::get('/my', [AppointmentController::class, 'index']);
         Route::get('/slots/{doctorId}/{date}/{cabinetType}/{cabinetId}',
             [AppointmentController::class, 'generateSlots']
         );
+        Route::get('/{appointment}', [AppointmentController::class, 'show']);
+        Route::put('/{appointment}', [AppointmentController::class, 'cancel']);
         Route::post('/walk-in', [DashboardController::class, 'walkIn']);
         Route::get('/dashboard/doc', [AppointmentController::class, 'getDoctorDashboard']);
     });

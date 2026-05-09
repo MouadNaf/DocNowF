@@ -29,7 +29,9 @@ class PublicDoctorController extends Controller
                     'date_of_birth' => $doctor->user->date_of_birth,
                     'phone_number' => $doctor->user->phone_number,
                     'profile_picture' => $doctor->user->profile_picture 
-                        ? asset('storage/' . $doctor->user->profile_picture) 
+                        ? (str_starts_with($doctor->user->profile_picture, 'http') 
+                            ? $doctor->user->profile_picture 
+                            : asset('storage/' . $doctor->user->profile_picture))
                         : null,
                     'rating' => '4.9', // Hardcoded for now until review system is added
                     'reviews' => '12', // Hardcoded

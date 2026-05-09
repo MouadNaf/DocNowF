@@ -64,18 +64,29 @@ class AppointmentController extends Controller
         return response()->json(['message' => 'Slot duration not configured'], 400);
     }
 
-    // 3. Get availabilities
+    // 3. Get availabilities for selected day
     $dayOfWeek = strtolower(Carbon::parse($date)->format('l'));
 
     $availabilities = DoctorAvailability::where('doctor_id', $doctor->id)
         ->where('day_of_week', $dayOfWeek)
         ->get();
 
+    // Fallback: if no exact weekday config exists, reuse doctor's configured ranges
+    // so the selected date can still show slots in the patient app.
+    if ($availabilities->isEmpty()) {
+        $availabilities = DoctorAvailability::where('doctor_id', $doctor->id)->get();
+    }
+
     if ($availabilities->isEmpty()) {
         return response()->json([
             'success' => true,
-            'message' => 'No availability scheduled',
-            'slots' => []
+            'data' => [
+                'doctor_name' => $doctor->user->name,
+                'date' => $date,
+                'location_type' => $cabinetType,
+                'slots' => [],
+            ],
+            'message' => 'No availability configured for this doctor.'
         ]);
     }
 

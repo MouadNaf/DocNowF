@@ -9,12 +9,16 @@ import 'features/doctors/presentation/bloc/doctor_bloc.dart';
 import 'features/home/presentation/bloc/home_bloc.dart';
 import 'features/search/presentation/bloc/search_bloc.dart';
 import 'core/network/network_info.dart';
+import 'features/chatbot/data/chat_service.dart';
 
 import 'features/appointments/domain/repositories/appointment_repository.dart';
 import 'features/appointments/data/repositories/appointment_repository_impl.dart';
 import 'features/appointments/domain/usecases/book_appointment.dart';
 import 'features/appointments/domain/usecases/get_available_slots.dart';
 import 'features/appointments/presentation/bloc/appointment_bloc.dart';
+import 'features/appointments/domain/usecases/get_patient_appointments.dart';
+import 'features/appointments/domain/usecases/cancel_appointment.dart';
+import 'features/appointments/presentation/bloc/patient_appointments_bloc.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
@@ -74,6 +78,8 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetDoctors(sl()));
   sl.registerLazySingleton(() => BookAppointment(sl()));
   sl.registerLazySingleton(() => GetAvailableSlots(sl()));
+  sl.registerLazySingleton(() => GetPatientAppointments(sl()));
+  sl.registerLazySingleton(() => CancelAppointment(sl()));
   sl.registerLazySingleton(() => LoginUseCase(sl()));
   sl.registerLazySingleton(() => RegisterUseCase(sl()));
   sl.registerLazySingleton(() => LogoutUseCase(sl()));
@@ -89,9 +95,16 @@ Future<void> init() async {
     bookAppointmentUseCase: sl(),
     getAvailableSlotsUseCase: sl(),
   ));
+  sl.registerFactory(() => PatientAppointmentsBloc(
+    getPatientAppointmentsUseCase: sl(),
+    cancelAppointmentUseCase: sl(),
+  ));
   sl.registerFactory(() => AuthBloc(
     loginUseCase: sl(),
     registerUseCase: sl(),
     logoutUseCase: sl(),
   ));
+
+  // Chatbot
+  sl.registerLazySingleton(() => ChatService(apiClient: sl()));
 }

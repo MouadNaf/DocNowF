@@ -1,8 +1,12 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/utils/colors.dart';
 import '../../../home/domain/entities/doctor.dart';
 import '../../../appointments/presentation/pages/book_appointment_page.dart';
+import '../../../../injection_container.dart';
+import '../../../../core/network/api_client.dart';
 
 class DoctorDetailsPage extends StatefulWidget {
   final Doctor doctor;
@@ -14,8 +18,78 @@ class DoctorDetailsPage extends StatefulWidget {
 }
 
 class _DoctorDetailsPageState extends State<DoctorDetailsPage> {
-  String _selectedTime = '10:00 AM';
+  String? _selectedTime;
   bool _isFavorite = false;
+  bool _loadingSchedule = true;
+  String? _scheduleError;
+  List<String> _todaySlots = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTodaySchedule();
+  }
+
+  Future<void> _loadTodaySchedule() async {
+    setState(() {
+      _loadingSchedule = true;
+      _scheduleError = null;
+    });
+
+    try {
+      final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      final cabinetType = widget.doctor.cabinetType.isNotEmpty
+          ? widget.doctor.cabinetType
+          : 'private';
+      final cabinetId = widget.doctor.cabinetId;
+
+      final apiClient = sl<ApiClient>();
+      final response = await apiClient.get(
+        '/appointments/slots/${widget.doctor.id}/$today/$cabinetType/$cabinetId',
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> decoded =
+            json.decode(response.body) as Map<String, dynamic>;
+
+        final List<dynamic> slots = (decoded['data']?['slots'] as List<dynamic>? ?? []);
+        final available = slots
+            .where((slot) => slot is Map<String, dynamic> && slot['is_available'] == true)
+            .map((slot) => _toDisplayTime((slot as Map<String, dynamic>)['start']?.toString() ?? ''))
+            .where((t) => t.isNotEmpty)
+            .toList(growable: false);
+
+        setState(() {
+          _todaySlots = available;
+          _selectedTime = available.isNotEmpty ? available.first : null;
+          _loadingSchedule = false;
+        });
+      } else {
+        setState(() {
+          _scheduleError = 'Unable to load today schedule';
+          _loadingSchedule = false;
+        });
+      }
+    } catch (_) {
+      setState(() {
+        _scheduleError = 'Unable to load today schedule';
+        _loadingSchedule = false;
+      });
+    }
+  }
+
+  String _toDisplayTime(String raw) {
+    if (raw.isEmpty) return '';
+    try {
+      return DateFormat('hh:mm a').format(DateFormat('HH:mm:ss').parse(raw));
+    } catch (_) {
+      try {
+        return DateFormat('hh:mm a').format(DateFormat('HH:mm').parse(raw));
+      } catch (_) {
+        return raw;
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,8 +102,12 @@ class _DoctorDetailsPageState extends State<DoctorDetailsPage> {
       body: Stack(
         children: [
           // Main Content
-          SingleChildScrollView(
-            child: Column(
+          RefreshIndicator(
+            color: AppColors.primary,
+            onRefresh: _loadTodaySchedule,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildHeaderImage(headerHeight),
@@ -38,6 +116,7 @@ class _DoctorDetailsPageState extends State<DoctorDetailsPage> {
                 _buildScheduleSection(),
                 const SizedBox(height: 120), // Space for bottom bar
               ],
+            ),
             ),
           ),
           
@@ -238,6 +317,13 @@ class _DoctorDetailsPageState extends State<DoctorDetailsPage> {
   }
 
   Widget _buildScheduleSection() {
+    if (_loadingSchedule) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -252,6 +338,29 @@ class _DoctorDetailsPageState extends State<DoctorDetailsPage> {
             ),
           ),
           const SizedBox(height: 16),
+          if (_scheduleError != null)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.red.shade100),
+              ),
+              child: Text(
+                _scheduleError!,
+                style: const TextStyle(color: Colors.red),
+              ),
+            )
+          else if (_todaySlots.isEmpty)
+            const Text(
+              'No available slots for today.',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 14,
+              ),
+            )
+          else
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -261,9 +370,9 @@ class _DoctorDetailsPageState extends State<DoctorDetailsPage> {
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
             ),
-            itemCount: widget.doctor.schedule.length,
+            itemCount: _todaySlots.length,
             itemBuilder: (context, index) {
-              final time = widget.doctor.schedule[index];
+              final time = _todaySlots[index];
               final isSelected = _selectedTime == time;
               return GestureDetector(
                 onTap: () => setState(() => _selectedTime = time),

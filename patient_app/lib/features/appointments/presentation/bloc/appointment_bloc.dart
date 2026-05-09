@@ -85,19 +85,45 @@ class AppointmentBloc extends Bloc<AppointmentEvent, AppointmentState> {
       ),
     );
 
-    result.fold(
-      (failure) => emit(AppointmentBookingError(
-        message: failure.message,
-        selectedDate: state.selectedDate,
-        selectedTimeSlot: state.selectedTimeSlot,
-        availableSlots: state.availableSlots,
-      )),
-      (appointment) => emit(AppointmentBookingSuccess(
-        appointment: appointment,
-        selectedDate: state.selectedDate,
-        selectedTimeSlot: state.selectedTimeSlot,
-        availableSlots: state.availableSlots,
-      )),
+    await result.fold(
+      (failure) async {
+        // If slot was just taken by someone else, refresh availability immediately.
+        if (failure.message.toLowerCase().contains('already booked')) {
+          final refreshed = await getAvailableSlotsUseCase(
+            GetAvailableSlotsParams(
+              doctorId: event.doctorId,
+              date: event.date,
+              cabinetType: event.cabinetType,
+              cabinetId: event.cabinetId,
+            ),
+          );
+
+          final refreshedSlots = refreshed.fold((_) => state.availableSlots, (slots) => slots);
+
+          emit(AppointmentBookingError(
+            message: 'This slot was just booked by another patient. Please choose a different slot.',
+            selectedDate: state.selectedDate,
+            selectedTimeSlot: null,
+            availableSlots: refreshedSlots,
+          ));
+          return;
+        }
+
+        emit(AppointmentBookingError(
+          message: failure.message,
+          selectedDate: state.selectedDate,
+          selectedTimeSlot: state.selectedTimeSlot,
+          availableSlots: state.availableSlots,
+        ));
+      },
+      (appointment) async {
+        emit(AppointmentBookingSuccess(
+          appointment: appointment,
+          selectedDate: state.selectedDate,
+          selectedTimeSlot: state.selectedTimeSlot,
+          availableSlots: state.availableSlots,
+        ));
+      },
     );
   }
 }

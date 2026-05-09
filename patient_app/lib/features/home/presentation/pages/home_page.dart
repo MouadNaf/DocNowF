@@ -23,6 +23,20 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
 
+  Future<void> _refreshHome(BuildContext context) async {
+    final bloc = context.read<HomeBloc>();
+    final done = bloc.stream.firstWhere(
+      (s) => s is HomeLoaded || s is HomeError,
+    );
+    final snap = bloc.state;
+    if (snap is HomeLoaded) {
+      bloc.add(CategorySelected(snap.selectedCategory));
+    } else {
+      bloc.add(const LoadHomeData());
+    }
+    await done;
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
@@ -32,8 +46,12 @@ class _HomePageState extends State<HomePage> {
         body: SafeArea(
           child: BlocBuilder<HomeBloc, HomeState>(
             builder: (context, state) {
-              return CustomScrollView(
-                slivers: [
+              return RefreshIndicator(
+                color: AppColors.primary,
+                onRefresh: () => _refreshHome(context),
+                child: CustomScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
@@ -85,6 +103,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                 ],
+                ),
               );
             },
           ),
