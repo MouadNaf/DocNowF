@@ -468,13 +468,36 @@ class _AllDoctorsPageState extends State<AllDoctorsPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    doctor.name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: AppColors.textPrimary,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          doctor.name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: AppColors.textPrimary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          // TODO: Implement toggle favorite event
+                          setState(() {
+                            // Local UI update for instant feedback
+                            // In real app, dispatch Bloc event
+                          });
+                        },
+                        child: Icon(
+                          doctor.isFavorite ? Icons.favorite : Icons.favorite_border,
+                          color: doctor.isFavorite ? Colors.red : AppColors.textSecondary,
+                          size: 20,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -599,6 +622,27 @@ class _AllDoctorsPageState extends State<AllDoctorsPage> {
                       ),
                     ),
                   ),
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: GestureDetector(
+                    onTap: () {
+                      // TODO: Implement toggle favorite
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.9),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        doctor.isFavorite ? Icons.favorite : Icons.favorite_border,
+                        color: doctor.isFavorite ? Colors.red : AppColors.textSecondary,
+                        size: 16,
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 10),

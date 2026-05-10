@@ -4,11 +4,13 @@ import 'package:patient_app/core/network/api_client.dart';
 // ─── Response models ─────────────────────────────────────────────────────────
 
 class ChatResponse {
+  final bool success;
   final String message;
   final String type; // 'text' | 'doctors' | 'appointments'
   final List<dynamic> data;
 
   const ChatResponse({
+    required this.success,
     required this.message,
     required this.type,
     required this.data,
@@ -16,6 +18,7 @@ class ChatResponse {
 
   factory ChatResponse.fromJson(Map<String, dynamic> json) {
     return ChatResponse(
+      success: json['success'] as bool? ?? true,
       message: json['message'] as String? ?? '',
       type: json['type'] as String? ?? 'text',
       data: json['data'] as List<dynamic>? ?? [],
@@ -121,12 +124,14 @@ class ChatService {
       try {
         final error = jsonDecode(response.body);
         return ChatResponse(
+          success: false,
           message: error['message'] ?? 'Server error (${response.statusCode})',
           type: 'text',
           data: [],
         );
       } catch (_) {
         return ChatResponse(
+          success: false,
           message: 'Server error (${response.statusCode}). Please try again later.',
           type: 'text',
           data: [],
@@ -135,6 +140,7 @@ class ChatService {
     } catch (e) {
       print('Chatbot DEBUG: Exception: $e');
       return const ChatResponse(
+        success: false,
         message: 'Connection error. Please check your internet and try again.',
         type: 'text',
         data: [],

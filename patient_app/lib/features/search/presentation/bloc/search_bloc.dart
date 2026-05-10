@@ -1,155 +1,72 @@
+import 'dart:convert';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/network/api_client.dart';
 import '../../../home/domain/entities/doctor.dart';
+import '../../../doctors/data/models/doctor_model.dart';
 import 'search_event.dart';
 import 'search_state.dart';
 
 class SearchBloc extends Bloc<SearchEvent, SearchState> {
-  // Same mock data — in production, this will come via the repository/use-case
-  static final List<Doctor> _allDoctors = [
-    const Doctor(
-      id: '1',
-      userId: 'u1',
-      name: 'Dr. Sarah Johnson',
-      email: 'sarah@example.com',
-      specialty: 'Cardiologist',
-      gender: 'Female',
-      city: 'Boston',
-      address: '789 Heart Center',
-      dob: '1980-03-10',
-      phoneNumber: '+1234567892',
-      profilePicture: 'https://i.pravatar.cc/150?img=11',
-      isVerified: true,
-      isActive: true,
-      rating: '4.9',
-      reviews: '127',
-      distance: '2.5 km',
-      experience: '15 years',
-      patients: '2,500+',
-      fee: '\$80',
-      about: 'Dr. Sarah Johnson is a board-certified cardiologist with over 15 years of experience in treating heart conditions. She specializes in preventive cardiology and has helped thousands of patients improve their cardiovascular health.',
-      hospital: 'MediCare Hospital, New York',
-      cabinetId: '7',
-      cabinetType: 'private',
-      schedule: ['09:00 AM', '10:00 AM', '11:00 AM', '02:00 PM', '03:00 PM'],
-    ),
-    const Doctor(
-      id: '2',
-      userId: 'u2',
-      name: 'Dr. Michael Chen',
-      email: 'michael@example.com',
-      specialty: 'Dentist',
-      gender: 'Male',
-      city: 'San Francisco',
-      address: '321 Dental Way',
-      dob: '1990-11-25',
-      phoneNumber: '+1234567893',
-      profilePicture: 'https://i.pravatar.cc/150?img=15',
-      isVerified: true,
-      isActive: true,
-      rating: '4.8',
-      reviews: '203',
-      distance: '1.2 km',
-      experience: '6 years',
-      patients: '1,500+',
-      fee: '\$60',
-      about: 'Dr. Michael Chen is a general dentist committed to providing excellent dental care in a comfortable environment. He specializes in cosmetic dentistry and oral hygiene.',
-      hospital: 'Smile Dental Care',
-      cabinetId: '8',
-      cabinetType: 'private',
-      schedule: ['10:00 AM', '11:30 AM', '02:30 PM', '04:00 PM'],
-    ),
-    const Doctor(
-      id: '3',
-      userId: 'u3',
-      name: 'Dr. Emily Williams',
-      email: 'emily@example.com',
-      specialty: 'Pediatrician',
-      gender: 'Female',
-      city: 'New York',
-      address: '123 Medical Ave',
-      dob: '1985-05-20',
-      phoneNumber: '+1234567890',
-      profilePicture: 'https://i.pravatar.cc/150?img=5',
-      isVerified: true,
-      isActive: true,
-      rating: '5.0',
-      reviews: '89',
-      distance: '3.8 km',
-      experience: '12 years',
-      patients: '1,200+',
-      fee: '\$70',
-      about: 'Dr. Emily Williams is a board-certified pediatrician with over 12 years of experience in treating children from newborns to adolescents. She is known for her gentle approach and dedication to children\'s wellness.',
-      hospital: 'NYC Children\'s Hospital',
-      cabinetId: '9',
-      cabinetType: 'private',
-      schedule: ['09:00 AM', '10:00 AM', '11:00 AM', '02:00 PM', '03:00 PM'],
-    ),
-    const Doctor(
-      id: '4',
-      userId: 'u4',
-      name: 'Dr. James Anderson',
-      email: 'james@example.com',
-      specialty: 'Neurologist',
-      gender: 'Male',
-      city: 'Chicago',
-      address: '555 Brain St',
-      dob: '1975-12-12',
-      phoneNumber: '+1234567894',
-      profilePicture: 'https://i.pravatar.cc/150?img=12',
-      isVerified: true,
-      isActive: true,
-      rating: '4.7',
-      reviews: '164',
-      distance: '4.1 km',
-      experience: '18 years',
-      patients: '3,100+',
-      fee: '\$110',
-      about: 'Dr. James Anderson is a highly experienced neurologist specializing in complex neurological disorders. He has spent nearly two decades researching movement disorders.',
-      hospital: 'Chicago Brain & Spine',
-      cabinetId: '10',
-      cabinetType: 'private',
-      schedule: ['08:00 AM', '11:00 AM', '03:00 PM'],
-    ),
-  ];
+  final ApiClient apiClient;
 
-  SearchBloc() : super(const SearchInitial()) {
+  SearchBloc({required this.apiClient}) : super(const SearchInitial()) {
     on<SearchQueryChanged>(_onQueryChanged);
     on<SearchCategoryChanged>(_onCategoryChanged);
     on<ClearRecentSearch>(_onClearRecent);
     on<ClearAllRecentSearches>(_onClearAll);
   }
 
-  void _onQueryChanged(SearchQueryChanged event, Emitter<SearchState> emit) {
+  Future<void> _onQueryChanged(SearchQueryChanged event, Emitter<SearchState> emit) async {
     final query = event.query.trim();
+    final currentCategory = _getCurrentCategory();
+
     if (query.isEmpty) {
-      final currentCategory = state is SearchLoaded
-          ? (state as SearchLoaded).selectedCategory
-          : (state is SearchInitial ? (state as SearchInitial).selectedCategory : 'All');
       emit(SearchInitial(selectedCategory: currentCategory));
       return;
     }
 
     emit(SearchLoading());
 
-    final category = state is SearchLoaded
-        ? (state as SearchLoaded).selectedCategory
-        : 'All';
-
-    final results = _filter(query, category);
-    emit(SearchLoaded(
-      doctors: results,
-      query: query,
-      selectedCategory: category,
-    ));
+    try {
+      final results = await _fetchFromApi(query, currentCategory);
+      emit(SearchLoaded(
+        doctors: results,
+        query: query,
+        selectedCategory: currentCategory,
+      ));
+    } catch (e) {
+      emit(SearchLoaded(
+        doctors: const [],
+        query: query,
+        selectedCategory: currentCategory,
+      ));
+    }
   }
 
-  void _onCategoryChanged(SearchCategoryChanged event, Emitter<SearchState> emit) {
-    if (state is SearchLoaded) {
-      final s = state as SearchLoaded;
-      final results = _filter(s.query, event.category);
-      emit(s.copyWith(selectedCategory: event.category, doctors: results));
-    } else if (state is SearchInitial) {
+  Future<void> _onCategoryChanged(SearchCategoryChanged event, Emitter<SearchState> emit) async {
+    final currentQuery = _getCurrentQuery();
+    
+    if (state is SearchInitial) {
       emit((state as SearchInitial).copyWith(selectedCategory: event.category));
+      if (currentQuery.isNotEmpty) {
+        add(SearchQueryChanged(currentQuery));
+      }
+    } else if (state is SearchLoaded) {
+      emit(SearchLoading());
+      try {
+        final results = await _fetchFromApi(currentQuery, event.category);
+        emit(SearchLoaded(
+          doctors: results,
+          query: currentQuery,
+          selectedCategory: event.category,
+        ));
+      } catch (e) {
+        emit(SearchLoaded(
+          doctors: const [],
+          query: currentQuery,
+          selectedCategory: event.category,
+        ));
+      }
     }
   }
 
@@ -167,14 +84,26 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     }
   }
 
-  List<Doctor> _filter(String query, String category) {
-    return _allDoctors.where((d) {
-      final matchesQuery =
-          d.name.toLowerCase().contains(query.toLowerCase()) ||
-          d.specialty.toLowerCase().contains(query.toLowerCase());
-      final matchesCategory = category == 'All' ||
-          d.specialty.toLowerCase().contains(category.toLowerCase());
-      return matchesQuery && matchesCategory;
-    }).toList();
+  String _getCurrentCategory() {
+    if (state is SearchLoaded) return (state as SearchLoaded).selectedCategory;
+    if (state is SearchInitial) return (state as SearchInitial).selectedCategory;
+    return 'All';
+  }
+
+  String _getCurrentQuery() {
+    if (state is SearchLoaded) return (state as SearchLoaded).query;
+    return '';
+  }
+
+  Future<List<Doctor>> _fetchFromApi(String query, String category) async {
+    final String specialtyParam = category == 'All' ? '' : '&specialty=$category';
+    final response = await apiClient.get('/doctors?search=$query$specialtyParam');
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> body = jsonDecode(response.body);
+      final List<dynamic> data = body['data'];
+      return data.map((json) => DoctorModel.fromJson(json)).toList();
+    }
+    return [];
   }
 }

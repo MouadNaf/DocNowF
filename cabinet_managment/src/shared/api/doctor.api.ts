@@ -4,7 +4,19 @@ import type { Patient } from '@/entities/patient';
 
 export const getAppointments = async (filters: { date?: string, patient?: string, status?: string } = {}): Promise<Appointment[]> => {
   const res = await api.get('/appointments', { params: filters });
-  return res.data.data;
+  return res.data.data.map((apt: any) => ({
+    id: String(apt.id),
+    patientId: String(apt.patientId || apt.patient_id),
+    patientName: apt.name || apt.patient_name,
+    doctorId: String(apt.doctorId || apt.doctor_id),
+    date: apt.appointment_date,
+    time: apt.start_time,
+    status: apt.status,
+    paymentStatus: apt.payment_status || 'unpaid',
+    consultationFee: Number(apt.consultation_fee || 0),
+    paidAt: apt.paid_at,
+    visitType: apt.visit_type || 'first_time',
+  }));
 };
 
 export const getPatients = async (): Promise<Patient[]> => {

@@ -26,6 +26,7 @@ class DoctorModel extends Doctor {
     required super.cabinetId,
     required super.cabinetType,
     required super.schedule,
+    super.isFavorite,
   });
 
   factory DoctorModel.fromJson(Map<String, dynamic> json) {
@@ -56,6 +57,7 @@ class DoctorModel extends Doctor {
       cabinetId: json['cabinet_id']?.toString() ?? '',
       cabinetType: json['cabinet_type']?.toString() ?? '',
       schedule: (json['schedule'] as List?)?.map((e) => e.toString()).toList() ?? [],
+      isFavorite: json['is_favorite'] == true || json['is_favorite'] == 1,
     );
   }
 }

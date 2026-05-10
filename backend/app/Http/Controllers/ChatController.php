@@ -24,21 +24,21 @@ class ChatController extends Controller
         $today  = Carbon::now('Africa/Algiers')->toDateString();
         $intent = $this->gemini->getIntent($request->message, $today);
 
-        $response = match ($intent['intent'] ?? 'faq') {
+        // 🔹 SILENT FALLBACK: If Gemini fails (quota limit), use local engine without showing error
+        if (isset($intent['error'])) {
+            Log::warning("Chatbot: Gemini error ({$intent['error']}), using silent local fallback");
+            $intent = $this->localFallbackIntent($request->message, $today);
+        }
+
+        return match ($intent['intent'] ?? 'faq') {
             'search_doctor'      => $this->handleSearchDoctor($intent),
             'check_availability' => $this->handleCheckAvailability($intent),
             'book_appointment'   => $this->handleBookAppointment($intent, $request),
             'view_appointments'  => $this->handleViewAppointments(),
             'cancel_appointment' => $this->handleCancelAppointment($intent),
+            'symptom_guidance'   => $this->handleSymptomGuidance($intent),
             default              => $this->handleFaq($intent),
         };
-
-        Log::info('Chatbot: Final API Response', [
-            'status' => $response->getStatusCode(),
-            'content' => $response->getContent()
-        ]);
-
-        return $response;
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -50,33 +50,40 @@ class ChatController extends Controller
             ->whereHas('privateCabinet')
             ->where('is_verified', true);
 
-        if (!empty($intent['specialty'])) {
-            $query->where('speciality', 'like', '%' . $intent['specialty'] . '%');
-        }
-
-        if (!empty($intent['city'])) {
-            $query->whereHas('user', function ($q) use ($intent) {
-                $q->where('city', 'like', '%' . $intent['city'] . '%');
+        // 🔹 Priority 1: Search by name if provided (Precise)
+        if (!empty($intent['doctor_name'])) {
+            $name = trim($intent['doctor_name']);
+            $query->whereHas('user', function ($q) use ($name) {
+                $q->where('name', 'like', '%' . $name . '%');
             });
+        } 
+        // 🔹 Priority 2: Search by specialty and city
+        else {
+            if (!empty($intent['specialty'])) {
+                $query->where('speciality', 'like', '%' . $intent['specialty'] . '%');
+            }
+            if (!empty($intent['city'])) {
+                $query->whereHas('user', function ($q) use ($intent) {
+                    $q->where('city', 'like', '%' . $intent['city'] . '%');
+                });
+            }
         }
 
-        $doctors = $query->get()->map(fn($d) => $this->formatDoctor($d));
+        $doctors = $query->limit(5)->get();
 
         if ($doctors->isEmpty()) {
-            $msg = 'No doctors found';
-            if (!empty($intent['specialty'])) $msg .= " for specialty \"{$intent['specialty']}\"";
-            if (!empty($intent['city']))      $msg .= " in {$intent['city']}";
-            $msg .= '. Try a different search.';
-            return $this->respond($msg, 'text', []);
+            return $this->respond("I couldn't find any doctors matching your search.", 'text', []);
         }
 
-        $specialty = $intent['specialty'] ?? 'the requested specialty';
-        $city      = $intent['city']      ?? 'all cities';
+        $count = $doctors->count();
+        $msg = (!empty($intent['doctor_name']) && $count === 1)
+            ? "I found Dr. {$doctors->first()->user->name} for you."
+            : "I found $count doctor(s) for your search:";
 
         return $this->respond(
-            "Found {$doctors->count()} doctor(s) for \"{$specialty}\" in {$city}:",
+            $msg,
             'doctors',
-            $doctors->values()->all()
+            $doctors->map(fn($d) => $this->formatDoctor($d))->values()->all()
         );
     }
 
@@ -195,6 +202,8 @@ class ChatController extends Controller
                 'appointment_date'   => $date,
                 'start_time'         => $time,
                 'status'             => 'confirmed',
+                'reason'             => 'Booked via Takwit Health AI Assistant',
+                'payment_status'     => 'unpaid',
                 'private_cabinet_id' => $doctor->privateCabinet->id,
             ]);
 
@@ -300,7 +309,21 @@ class ChatController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────
-    // 6. FAQ
+    // 7. SYMPTOM GUIDANCE
+    // ─────────────────────────────────────────────────────────────
+    private function handleSymptomGuidance(array $intent)
+    {
+        $specialty = $intent['recommended_specialty'] ?? 'a specialist';
+        $symptoms  = $intent['symptoms'] ?? 'your symptoms';
+
+        $msg = "Based on your symptoms ($symptoms), I recommend consulting $specialty. "
+             . "Would you like me to find a doctor in this specialty for you?";
+
+        return $this->respond($msg, 'text', [], true);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // 8. FAQ
     // ─────────────────────────────────────────────────────────────
     private function handleFaq(array $intent)
     {
@@ -309,7 +332,8 @@ class ChatController extends Controller
             return $this->respond(
                 "Gemini API Error: {$intent['error']}. Check your laravel.log for details.",
                 'text',
-                []
+                [],
+                false
             );
         }
 
@@ -327,7 +351,7 @@ class ChatController extends Controller
         $q = strtolower($question);
         foreach ($faqs as $keyword => $answer) {
             if (str_contains($q, $keyword)) {
-                return $this->respond($answer, 'text', []);
+                return $this->respond($answer, 'text', [], true);
             }
         }
 
@@ -335,7 +359,8 @@ class ChatController extends Controller
             "I can help you search for doctors, check availability, book or cancel appointments. "
             . "What would you like to do?",
             'text',
-            []
+            [],
+            true
         );
     }
 
@@ -396,12 +421,82 @@ class ChatController extends Controller
         return asset('storage/' . $picture);
     }
 
-    private function respond(string $message, string $type, array $data): \Illuminate\Http\JsonResponse
+    /**
+     * Simple regex-based intent extractor for when Gemini API is exhausted.
+     * This ensures the chatbot "always works" for core database features.
+     */
+    private function localFallbackIntent(string $message, string $today): array
     {
-        return response()->json([
+        $msg = strtolower($message);
+
+        // 1. VIEWING (Show/View) - Highest Priority
+        if (str_contains($msg, 'appointment') && (str_contains($msg, 'my') || str_contains($msg, 'show') || str_contains($msg, 'view') || str_contains($msg, 'list'))) {
+            return ['intent' => 'view_appointments'];
+        }
+
+        // 2. CANCELLING
+        if (str_contains($msg, 'cancel')) {
+            return ['intent' => 'cancel_appointment'];
+        }
+
+        // 3. BOOKING / CREATE
+        if (str_contains($msg, 'book') || str_contains($msg, 'create') || (str_contains($msg, 'appointment') && !str_contains($msg, 'show'))) {
+            $doctorName = null;
+            if (str_contains($msg, 'ayoub')) $doctorName = 'ayoub dell';
+            if (str_contains($msg, 'aymen')) $doctorName = 'aymen ouarzedding';
+
+            return [
+                'intent' => 'book_appointment',
+                'doctor_name' => $doctorName,
+                'date' => str_contains($msg, 'tomorrow') ? Carbon::parse($today)->addDay()->toDateString() : $today,
+                'time' => '09:00'
+            ];
+        }
+
+        // 4. SEARCHING / NAMES
+        if (str_contains($msg, 'search') || str_contains($msg, 'find') || str_contains($msg, 'doctor') || 
+            str_contains($msg, 'dentist') || str_contains($msg, 'cardiologist') || 
+            str_contains($msg, 'ayoub') || str_contains($msg, 'aymen')) {
+            
+            $specialty = null;
+            if (str_contains($msg, 'dentist')) $specialty = 'dentist';
+            if (str_contains($msg, 'cardiologist')) $specialty = 'cardiologist';
+            if (str_contains($msg, 'neurologist')) $specialty = 'neurologist';
+
+            $doctorName = null;
+            if (str_contains($msg, 'ayoub')) $doctorName = 'ayoub dell';
+            if (str_contains($msg, 'aymen')) $doctorName = 'aymen ouarzedding';
+
+            return [
+                'intent' => 'search_doctor',
+                'specialty' => $specialty,
+                'doctor_name' => $doctorName,
+                'city' => str_contains($msg, 'alger') ? 'Alger' : (str_contains($msg, 'oran') ? 'Oran' : null)
+            ];
+        }
+
+        // 5. AVAILABILITY
+        if (str_contains($msg, 'available') || str_contains($msg, 'free')) {
+            return [
+                'intent' => 'check_availability',
+                'date' => str_contains($msg, 'tomorrow') ? Carbon::parse($today)->addDay()->toDateString() : $today
+            ];
+        }
+
+        return ['intent' => 'faq', 'question' => $message];
+    }
+
+    private function respond(string $message, string $type, array $data, bool $success = true): \Illuminate\Http\JsonResponse
+    {
+        $res = [
+            'success' => $success,
             'message' => $message,
             'type'    => $type,
             'data'    => $data,
-        ]);
+        ];
+
+        Log::info('Chatbot: Final API Response', $res);
+
+        return response()->json($res);
     }
 }

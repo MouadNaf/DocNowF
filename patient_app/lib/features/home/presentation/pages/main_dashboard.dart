@@ -3,6 +3,7 @@ import 'package:patient_app/core/utils/navigation_service.dart';
 import 'package:patient_app/features/auth/presentation/pages/profile_page.dart';
 import 'package:patient_app/features/appointments/presentation/pages/appointments_page.dart';
 import 'package:patient_app/features/chatbot/presentation/pages/chatbot_page.dart';
+import 'package:patient_app/features/doctors/presentation/pages/favorite_doctors_page.dart';
 import 'home_page.dart';
 import '../../../../core/widgets/bottom_navigation_bar.dart';
 import '../../../../core/utils/colors.dart';
@@ -18,7 +19,7 @@ class _MainDashboardState extends State<MainDashboard> {
   final List<Widget> _pages = [
     const HomePage(),
     const AppointmentsPage(),
-    const PlaceholderPage(title: 'Favorites'),
+    const FavoriteDoctorsPage(),
     const ProfilePage(),
   ];
 
@@ -51,19 +52,6 @@ class _MainDashboardState extends State<MainDashboard> {
           ),
         );
       },
-    );
-  }
-}
-
-class PlaceholderPage extends StatelessWidget {
-  final String title;
-  const PlaceholderPage({super.key, required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(child: Text('Welcome to $title Page')),
     );
   }
 }

@@ -5,7 +5,7 @@ import { StatCard } from '@/components/ui/StatCard';
 import { DollarSign, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export function DoctorAccountingPage() {
-    const { appointments, loading } = useAppointments(false);
+    const { appointments, loading } = useAppointments();
 
     const { totalExpected, totalPaid, totalUnpaid } = useMemo(() => {
         let expected = 0;
@@ -67,7 +67,7 @@ export function DoctorAccountingPage() {
                                     <thead>
                                         <tr>
                                             <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
-                                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Patient ID</th>
+                                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Patient</th>
                                             <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Fee</th>
                                             <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                                             <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Paid At</th>
@@ -80,7 +80,7 @@ export function DoctorAccountingPage() {
                                                     {apt.date}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {apt.patientId}
+                                                    {apt.patientName || apt.patientId}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
                                                     {apt.consultationFee} DZD

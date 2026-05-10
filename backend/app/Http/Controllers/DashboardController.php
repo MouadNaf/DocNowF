@@ -20,11 +20,16 @@ class DashboardController extends Controller
         if (!$doctorId) return response()->json(['message' => 'Unauthorized'], 403);
 
         $today = now()->toDateString();
+        $revenueToday = Appointment::where('doctor_id', $doctorId)
+            ->whereDate('appointment_date', $today)
+            ->where('payment_status', 'paid')
+            ->sum('consultation_fee');
+
         return response()->json([
             'todayAppointments' => Appointment::where('doctor_id', $doctorId)->where('appointment_date', $today)->count(),
             'totalPatients'     => Patient::whereHas('appointments', fn($q) => $q->where('doctor_id', $doctorId))->count(),
             'noShows'           => Appointment::where('doctor_id', $doctorId)->where('status', 'no_show')->count(),
-            'revenueToday'      => 0,
+            'revenueToday'      => (float) $revenueToday,
         ]);
     }
 

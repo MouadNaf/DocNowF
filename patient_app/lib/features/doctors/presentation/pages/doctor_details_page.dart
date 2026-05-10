@@ -27,7 +27,27 @@ class _DoctorDetailsPageState extends State<DoctorDetailsPage> {
   @override
   void initState() {
     super.initState();
+    _isFavorite = widget.doctor.isFavorite;
     _loadTodaySchedule();
+  }
+
+  Future<void> _toggleFavorite() async {
+    final oldStatus = _isFavorite;
+    setState(() => _isFavorite = !oldStatus);
+
+    try {
+      final apiClient = sl<ApiClient>();
+      final response = await apiClient.post(
+        '/favorites/toggle',
+        body: {'doctor_id': widget.doctor.id},
+      );
+
+      if (response.statusCode != 200) {
+        setState(() => _isFavorite = oldStatus);
+      }
+    } catch (_) {
+      setState(() => _isFavorite = oldStatus);
+    }
   }
 
   Future<void> _loadTodaySchedule() async {
@@ -163,7 +183,7 @@ class _DoctorDetailsPageState extends State<DoctorDetailsPage> {
               ),
             ),
             GestureDetector(
-              onTap: () => setState(() => _isFavorite = !_isFavorite),
+              onTap: _toggleFavorite,
               child: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(

@@ -11,6 +11,7 @@ use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\FavoriteController;
 
 /*
 |--------------------------------------------------------------------------
@@ -183,4 +184,9 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/secretaries', [AdminController::class, 'getAllSecretaries']);
             Route::get('/patients', [AdminController::class, 'getAllPatients']);
         });
+
+    // ── Favorites ───────────────────────────────────────────────
+    Route::get('/favorites', [FavoriteController::class, 'index']);
+    Route::post('/favorites/toggle', [FavoriteController::class, 'toggle']);
+    // ────────────────────────────────────────────────────────────
 });

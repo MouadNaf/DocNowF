@@ -12,6 +12,7 @@ import '../bloc/home_state.dart';
 import '../../../search/presentation/pages/search_page.dart';
 import '../../../doctors/presentation/pages/all_doctors_page.dart';
 import '../../../doctors/presentation/pages/doctor_details_page.dart';
+import '../../../doctors/presentation/pages/favorite_doctors_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -115,31 +116,57 @@ class _HomePageState extends State<HomePage> {
   // ── Header ──────────────────────────────────────────────────────────────────
   Widget _buildHeader(HomeState state) {
     final name = state is HomeLoaded ? state.userName : '';
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              _greeting(),
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
+            Row(
+              children: [
+                Text(
+                  _greeting(),
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                const Text('👋', style: TextStyle(fontSize: 18)),
+              ],
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Find Your Doctor',
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                letterSpacing: -0.3,
               ),
             ),
-            const SizedBox(width: 6),
-            const Text('👋', style: TextStyle(fontSize: 18)),
           ],
         ),
-        const SizedBox(height: 4),
-        const Text(
-          'Find Your Doctor',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 26,
-            fontWeight: FontWeight.bold,
-            letterSpacing: -0.3,
+        GestureDetector(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const FavoriteDoctorsPage()),
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: const Icon(Icons.favorite, color: Colors.red, size: 24),
           ),
         ),
       ],

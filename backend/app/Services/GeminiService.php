@@ -13,7 +13,7 @@ class GeminiService
     public function __construct()
     {
         $this->apiKey = config('services.gemini.api_key');
-        $this->endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent';
+        $this->endpoint = 'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent';
     }
 
     /**
@@ -29,7 +29,7 @@ class GeminiService
 
         $systemPrompt = $this->buildSystemPrompt($today);
 
-            $payload = [
+        $payload = [
             'contents' => [
                 [
                     'role' => 'user',
@@ -84,16 +84,14 @@ class GeminiService
 
             if (!is_array($intent) || !isset($intent['intent'])) {
                 Log::warning('Gemini: Missing intent field', ['parsed' => $intent]);
-                return ['intent' => 'faq', 'raw' => $rawText];
+                return ['intent' => 'faq'];
             }
 
             Log::info('Chatbot: Parsed intent successfully', ['intent' => $intent]);
             return $intent;
 
         } catch (\Throwable $e) {
-            Log::error('GeminiService exception: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
+            Log::error('GeminiService exception: ' . $e->getMessage());
             return ['intent' => 'faq', 'error' => 'EXCEPTION_OCCURRED'];
         }
     }
@@ -101,41 +99,29 @@ class GeminiService
     private function buildSystemPrompt(string $today): string
     {
         return <<<PROMPT
-You are a senior medical assistant AI for "Takwit Health". 
-Your task is to extract user intent and parameters from medical chat messages.
-Today's date: {$today}.
+You are "Takwit Health AI Assistant". Your job is to extract medical intents from user messages.
+Today's date is {$today}.
 
-IMPORTANT: You MUST return ONLY a raw JSON object. 
-Do NOT include markdown code blocks (```json ... ```).
-Do NOT include any explanations or conversational text.
-ONLY return the JSON.
+RULES:
+1. Return ONLY raw JSON. NO markdown. NO explanation.
+2. If the user mentions symptoms (e.g. "I have chest pain"), use "symptom_guidance".
+3. NEVER diagnose a disease. NEVER prescribe medicine.
+4. For symptoms, suggest a doctor specialty and recommend consultation.
 
-Supported intents:
+SUPPORTED INTENTS:
 
-1. search_doctor
-   - Fields: {"intent": "search_doctor", "specialty": "string|null", "city": "string|null"}
+- search_doctor: {"intent": "search_doctor", "specialty": "string|null", "city": "string|null"}
+- check_availability: {"intent": "check_availability", "doctor_name": "string|null", "date": "YYYY-MM-DD|null"}
+- book_appointment: {"intent": "book_appointment", "doctor_name": "string|null", "date": "YYYY-MM-DD|null", "time": "HH:MM|null"}
+- view_appointments: {"intent": "view_appointments"}
+- cancel_appointment: {"intent": "cancel_appointment", "appointment_id": "string|null"}
+- symptom_guidance: {"intent": "symptom_guidance", "symptoms": "string", "recommended_specialty": "string"}
+- faq: {"intent": "faq", "question": "string"}
 
-2. check_availability
-   - Fields: {"intent": "check_availability", "doctor_name": "string|null", "date": "YYYY-MM-DD|null"}
-
-3. book_appointment
-   - Fields: {"intent": "book_appointment", "doctor_name": "string|null", "date": "YYYY-MM-DD|null", "time": "HH:MM|null"}
-
-4. view_appointments
-   - Fields: {"intent": "view_appointments"}
-
-5. cancel_appointment
-   - Fields: {"intent": "cancel_appointment", "appointment_id": "string|null"}
-
-6. faq
-   - Fields: {"intent": "faq", "question": "string"}
-
-Logic Rules:
-- If today is {$today}, "tomorrow" is the day after.
-- If user says "the first one" or "the 1st appointment", they mean the top item in the list you just showed them. Try to extract identifying info if possible, or just the intent.
-- When extracting "doctor_name", ALWAYS remove titles like "Dr.", "Doctor", "Pr.", "Professeur". Just return the name (e.g., "ayoub dell").
-- Normalize misspelled names if obvious (e.g., "ayoubdell" -> "ayoub dell").
-- Keep responses strictly to the JSON schema. No thoughts.
+LOGIC:
+- "tomorrow" from {$today} is next day.
+- Normalize doctor names (remove "Dr.", "Doctor").
+- If greeting ("hi"), use "faq".
 PROMPT;
     }
 }

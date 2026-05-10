@@ -90,7 +90,7 @@ Future<void> init() async {
     searchDoctors: sl(),
   ));
   sl.registerFactory(() => HomeBloc(getDoctors: sl()));
-  sl.registerFactory(() => SearchBloc());
+  sl.registerFactory(() => SearchBloc(apiClient: sl()));
   sl.registerFactory(() => AppointmentBloc(
     bookAppointmentUseCase: sl(),
     getAvailableSlotsUseCase: sl(),

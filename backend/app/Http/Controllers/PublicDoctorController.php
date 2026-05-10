@@ -12,11 +12,36 @@ class PublicDoctorController extends Controller
      */
     public function index(Request $request)
     {
-        $doctors = Doctor::with(['user', 'privateCabinet'])
+        $user = auth('sanctum')->user();
+        $favoriteIds = [];
+        if ($user && $user->role === 'patient' && $user->patient) {
+            $favoriteIds = \App\Models\FavoriteDoctor::where('patient_id', $user->patient->id)
+                ->pluck('doctor_id')
+                ->toArray();
+        }
+
+        $query = Doctor::with(['user', 'privateCabinet'])
             ->whereHas('privateCabinet')
-            ->where('is_verified', true)
-            ->get()
-            ->map(function ($doctor) {
+            ->where('is_verified', true);
+
+        // 🔹 Search Filter
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->whereHas('user', function($u) use ($search) {
+                    $u->where('name', 'LIKE', "%{$search}%");
+                })
+                ->orWhere('speciality', 'LIKE', "%{$search}%");
+            });
+        }
+
+        // 🔹 Specialty Filter (for categories)
+        if ($request->has('specialty')) {
+            $query->where('speciality', 'LIKE', "%{$request->specialty}%");
+        }
+
+        $doctors = $query->get()
+            ->map(function ($doctor) use ($favoriteIds) {
                 return [
                     'id' => (string) $doctor->id,
                     'user_id' => (string) $doctor->user_id,
@@ -47,6 +72,7 @@ class PublicDoctorController extends Controller
                     'cabinet_type' => 'private',
                     'is_verified' => (bool) $doctor->is_verified,
                     'is_active' => (bool) $doctor->is_active,
+                    'is_favorite' => in_array($doctor->id, $favoriteIds),
                 ];
             });
 
