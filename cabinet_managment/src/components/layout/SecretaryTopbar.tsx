@@ -1,4 +1,4 @@
-﻿import { Bell, Languages, LogOut, Moon, Sun, UserPlus } from 'lucide-react'
+import { Bell, Languages, LogOut, Moon, Sun, UserPlus } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTES } from '@/constants/routes'
 import { usePreferencesStore } from '@/store/preferences.store'
@@ -47,16 +47,6 @@ export function SecretaryTopbar({ title }: { title: string }) {
         <button className="size-10 border rounded-lg flex items-center justify-center relative dark:border-slate-600 dark:text-slate-200">
           <Bell size={16} />
           <span className="absolute -top-1 -right-1 size-4 text-[10px] rounded-full bg-red-500 text-white flex items-center justify-center">3</span>
-        </button>
-        <button
-          onClick={() => {
-            logout()
-            navigate(ROUTES.LOGIN, { replace: true })
-          }}
-          className="h-10 px-3 border border-red-200 text-red-600 rounded-lg text-sm flex items-center gap-1 dark:border-red-900/50 dark:text-red-300"
-        >
-          <LogOut size={14} />
-          {t(language, 'logout')}
         </button>
       </div>
     </header>

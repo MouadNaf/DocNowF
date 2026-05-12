@@ -12,6 +12,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\FavoriteController;
+use App\Http\Controllers\WalletController;
 
 /*
 |--------------------------------------------------------------------------
@@ -183,7 +184,20 @@ Route::middleware('auth:sanctum')->group(function () {
 
             Route::get('/secretaries', [AdminController::class, 'getAllSecretaries']);
             Route::get('/patients', [AdminController::class, 'getAllPatients']);
+
+            // Wallet Admin
+            Route::get('/recharge-requests', [WalletController::class, 'adminRechargeRequests']);
+            Route::post('/recharge-requests/{id}/approve', [WalletController::class, 'approveRechargeRequest']);
+            Route::post('/recharge-requests/{id}/reject', [WalletController::class, 'rejectRechargeRequest']);
         });
+
+    // Wallet (Doctor)
+    Route::prefix('wallet')->group(function () {
+        Route::get('/', [WalletController::class, 'index']);
+        Route::get('/transactions', [WalletController::class, 'transactions']);
+        Route::get('/recharge-requests', [WalletController::class, 'doctorRechargeRequests']);
+        Route::post('/recharge-request', [WalletController::class, 'submitRechargeRequest']);
+    });
 
     // ── Favorites ───────────────────────────────────────────────
     Route::get('/favorites', [FavoriteController::class, 'index']);

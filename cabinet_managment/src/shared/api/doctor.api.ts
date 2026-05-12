@@ -4,18 +4,22 @@ import type { Patient } from '@/entities/patient';
 
 export const getAppointments = async (filters: { date?: string, patient?: string, status?: string } = {}): Promise<Appointment[]> => {
   const res = await api.get('/appointments', { params: filters });
-  return res.data.data.map((apt: any) => ({
+  const appointments = res.data.appointments || res.data.data || [];
+  
+  return appointments.map((apt: any) => ({
     id: String(apt.id),
-    patientId: String(apt.patientId || apt.patient_id),
-    patientName: apt.name || apt.patient_name,
-    doctorId: String(apt.doctorId || apt.doctor_id),
-    date: apt.appointment_date,
-    time: apt.start_time,
+    patient_id: String(apt.patient_id),
+    patient: {
+      id: apt.patient?.id || apt.patient_id,
+      name: apt.patient?.user?.name || apt.patient?.name || apt.name || `Patient #${apt.patient_id}`
+    },
+    doctor_id: String(apt.doctor_id),
+    appointment_date: apt.appointment_date,
+    start_time: apt.start_time,
     status: apt.status,
-    paymentStatus: apt.payment_status || 'unpaid',
-    consultationFee: Number(apt.consultation_fee || 0),
+    payment_status: apt.payment_status || 'unpaid',
+    consultation_fee: Number(apt.consultation_fee || 0),
     paidAt: apt.paid_at,
-    visitType: apt.visit_type || 'first_time',
   }));
 };
 
@@ -63,5 +67,27 @@ export const setAppointmentPrice = async (id: string, price: number) => {
 
 export const markAppointmentPaid = async (id: string) => {
     const res = await api.patch(`/doctor/appointments/${id}/mark-paid`);
+    return res.data;
+};
+
+export const getWallet = async () => {
+    const res = await api.get('/wallet');
+    return res.data;
+};
+
+export const getWalletTransactions = async () => {
+    const res = await api.get('/wallet/transactions');
+    return res.data;
+};
+
+export const getRechargeRequests = async () => {
+    const res = await api.get('/wallet/recharge-requests');
+    return res.data;
+};
+
+export const submitRechargeRequest = async (formData: FormData) => {
+    const res = await api.post('/wallet/recharge-request', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    });
     return res.data;
 };

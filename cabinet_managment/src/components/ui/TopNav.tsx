@@ -1,13 +1,14 @@
-import { Bell, Languages, LogOut, Moon, Sun } from 'lucide-react';
+import { Bell, Languages, Moon, Sun } from 'lucide-react';
 import { usePreferencesStore } from '@/store/preferences.store'
 import { useAuthStore } from '@/store/auth.store'
 import { useNavigate } from 'react-router-dom'
 import { ROUTES } from '@/constants/routes'
 import { t } from '@/lib/i18n'
+import { useWallet } from '@/shared/api/hooks'
+import { Wallet } from 'lucide-react'
 
 export function TopNav() {
   const { language, theme, toggleLanguage, toggleTheme } = usePreferencesStore()
-  const logout = useAuthStore((s) => s.logout)
   const navigate = useNavigate()
   const today = new Date();
   const dateOptions: Intl.DateTimeFormatOptions = { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' };
@@ -15,6 +16,8 @@ export function TopNav() {
   const formattedDate = today.toLocaleDateString(locale, dateOptions);
   const welcome = t(language, 'welcomeDoctor')
   const role = t(language, 'doctor')
+  const user = useAuthStore((s) => s.user)
+  const { data: wallet } = useWallet()
 
   return (
     <header className="flex h-20 items-center justify-between border-b border-gray-100 bg-white px-8 dark:border-slate-700 dark:bg-slate-900">
@@ -44,6 +47,19 @@ export function TopNav() {
           <span className="absolute -top-1 -right-1 block h-3 w-3 rounded-full bg-red-500 border-2 border-white dark:border-slate-900"></span>
         </div>
 
+        {user?.role === 'doctor' && (
+          <div 
+            onClick={() => navigate('/doctor/accounting')}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-50 border border-emerald-100 rounded-xl text-[#1D9E75] hover:bg-emerald-100 transition-colors cursor-pointer"
+          >
+            <Wallet size={18} />
+            <div className="flex flex-col items-start leading-none">
+              <span className="text-[10px] uppercase font-bold opacity-70">Wallet</span>
+              <span className="text-sm font-bold">{wallet?.balance ?? 0} DA</span>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center gap-3 border-l border-gray-100 pl-6 cursor-pointer dark:border-slate-700">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500 text-sm font-bold text-white">
             DSJ
@@ -53,16 +69,6 @@ export function TopNav() {
             <p className="text-xs font-semibold text-gray-400 mt-1 dark:text-slate-400">{role}</p>
           </div>
         </div>
-        <button
-          onClick={() => {
-            logout()
-            navigate(ROUTES.LOGIN, { replace: true })
-          }}
-          className="inline-flex h-9 items-center gap-1 rounded-lg border border-red-200 px-3 text-xs font-semibold text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:text-red-300 dark:hover:bg-red-950/40"
-        >
-          <LogOut size={14} />
-          {t(language, 'logout')}
-        </button>
       </div>
     </header>
   );

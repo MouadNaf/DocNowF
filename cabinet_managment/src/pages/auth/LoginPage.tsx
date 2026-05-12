@@ -61,7 +61,7 @@ export function LoginPage() {
       <div className="auth-card auth-form-panel mx-auto w-full .max-w-\[440px\] p-6 sm:p-8">
         <div className="mb-7 text-center">
           <h2 className="mb-1 text-[22px] font-bold tracking-tight text-gray-900 dark:text-slate-100">Welcome back</h2>
-          <p className="text-sm text-gray-500 dark:text-slate-500">Sign in to your Takwit Health account to continue.</p>
+          <p className="text-sm text-gray-500 dark:text-slate-500">Sign in to your DocNow account to continue.</p>
         </div>
         {error && <Alert type="error" message={error} />}
         <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>

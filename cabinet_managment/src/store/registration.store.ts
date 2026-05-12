@@ -41,6 +41,6 @@ export const useRegistrationStore = create<RegistrationState>()(
       setOnboardingStep: (onboardingStep) => set({ onboardingStep }),
       reset: () => set(initial),
     }),
-    { name: 'takwit_registration' },
+    { name: 'docnow_registration' },
   ),
 )

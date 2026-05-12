@@ -78,7 +78,7 @@ export function PendingPage() {
         </Link>
         <p className="text-center text-xs text-gray-400 dark:text-slate-500">
           Questions?{' '}
-          <a className="font-medium text-[#1D9E75] hover:underline dark:text-emerald-400" href="mailto:support@takwit.dz">
+          <a className="font-medium text-[#1D9E75] hover:underline dark:text-emerald-400" href="mailto:support@docnow.dz">
             Contact support
           </a>
         </p>

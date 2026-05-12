@@ -14,10 +14,14 @@ class Doctor extends Model
         'speciality',
         'is_verified',
         'is_active',
-        'documents'
+        'documents',
+        'wallet_balance',
+        'low_balance_threshold'
     ];
     protected $casts = [
         'documents' => 'array',
+        'wallet_balance' => 'decimal:2',
+        'low_balance_threshold' => 'decimal:2',
     ];
 
     // Relationships
@@ -44,6 +48,16 @@ class Doctor extends Model
     public function unavailabilities()
     {
         return $this->hasMany(DoctorUnavailability::class);
+    }
+
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class);
+    }
+
+    public function rechargeRequests()
+    {
+        return $this->hasMany(RechargeRequest::class);
     }
 ////////////////////////////
     public function secretaries()

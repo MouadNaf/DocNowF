@@ -202,7 +202,7 @@ class ChatController extends Controller
                 'appointment_date'   => $date,
                 'start_time'         => $time,
                 'status'             => 'confirmed',
-                'reason'             => 'Booked via Takwit Health AI Assistant',
+                'reason'             => 'Booked via DocNow AI Assistant',
                 'payment_status'     => 'unpaid',
                 'private_cabinet_id' => $doctor->privateCabinet->id,
             ]);

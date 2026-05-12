@@ -16,7 +16,23 @@ export async function getAppointments(filters: AppointmentFilters): Promise<Secr
   if (filters.patient) params.patient = filters.patient
   if (filters.status)  params.status  = filters.status
   const res = await api.get('/appointments', { params })
-  return res.data.data ?? []
+  const data = res.data.data ?? []
+  
+  return data.map((a: any) => ({
+    id: a.id,
+    status: a.status,
+    payment_status: a.payment_status || 'unpaid',
+    fee: Number(a.consultation_fee || 0),
+    notes: a.notes || null,
+    scheduled_at: a.scheduled_at,
+    date: a.appointment_date || a.date,
+    time: a.start_time || a.time,
+    patient_id: a.patient_id,
+    name: a.patient?.name || a.name || 'Patient inconnu',
+    phone: a.patient?.phone || a.phone || '—',
+    gender: a.patient?.gender || a.gender || null,
+    arrived_at: a.arrived_at || null
+  }))
 }
 
 export async function getTodaySchedule(doctor_id: string): Promise<SecretaryAppointment[]> {
@@ -74,7 +90,12 @@ export async function getPatients(doctor_id: string, search?: string): Promise<S
   const params: Record<string, string> = { doctor_id }
   if (search) params.search = search
   const res = await api.get('/patients', { params })
-  return res.data.data ?? []
+  const data = res.data.data ?? []
+  
+  return data.map((p: any) => ({
+    ...p,
+    visits: p.totalVisits ?? p.visits ?? 0
+  }))
 }
 
 // ─── Stubs (no backend endpoint yet) ─────────────────────────────────────────

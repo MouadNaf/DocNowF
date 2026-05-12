@@ -1,13 +1,15 @@
 export interface Appointment {
   id: string;
-  patientId: string;
-  patientName?: string;
-  doctorId: string;
-  date: string; // YYYY-MM-DD
-  time: string; // HH:MM
-  status: 'confirmed' | 'arrived' | 'completed' | 'no_show';
-  paymentStatus: 'unpaid' | 'paid';
-  visitType: 'first_time' | 'follow_up';
-  consultationFee: number;
+  patient_id: string;
+  patient?: {
+    id: number;
+    name: string;
+  };
+  doctor_id: string;
+  appointment_date: string;
+  start_time: string;
+  status: 'confirmed' | 'arrived' | 'completed' | 'no_show' | 'cancelled';
+  payment_status: 'unpaid' | 'paid';
+  consultation_fee: number;
   paidAt?: string;
 }

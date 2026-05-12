@@ -1,26 +1,17 @@
 import { useState, useEffect } from 'react';
-import { getAppointments, getDashboardStats, getPatients, getSchedules, updateAppointmentStatus, getAppointmentDetails, saveConsultation, getPatientHistory } from './doctor.api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getAppointments, getDashboardStats, getPatients, getSchedules, updateAppointmentStatus, getAppointmentDetails, saveConsultation, getPatientHistory, getWallet, getWalletTransactions, getRechargeRequests } from './doctor.api';
 import type { Appointment } from '@/entities/appointment';
 import type { Patient } from '@/entities/patient';
 import type { Schedule } from '@/entities/schedule';
 
 export const useDashboardStats = () => {
-    const [data, setData] = useState<{
-        todayAppointments: number;
-        totalPatients: number;
-        noShows: number;
-        revenueToday: number;
-    } | null>(null);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        getDashboardStats().then(res => {
-            setData(res);
-            setLoading(false);
-        });
-    }, []);
-
-    return { data, loading };
+    const query = useQuery({
+        queryKey: ['dashboard-stats'],
+        queryFn: getDashboardStats,
+        refetchInterval: 30000,
+    });
+    return { data: query.data, loading: query.isLoading, refresh: query.refetch };
 };
 
 export const useAppointments = (filters: { date?: string, patient?: string, status?: string } = {}) => {
@@ -115,3 +106,34 @@ export const useSchedules = () => {
 
     return { schedules, loading };
 };
+
+export const useWallet = () => {
+    const query = useQuery({
+        queryKey: ['wallet'],
+        queryFn: getWallet,
+        refetchInterval: 5000,
+    });
+    return { data: query.data, loading: query.isLoading, refresh: query.refetch };
+};
+
+export const useWalletTransactions = () => {
+    const query = useQuery({
+        queryKey: ['wallet-transactions'],
+        queryFn: async () => {
+            const res = await getWalletTransactions();
+            return res.data || [];
+        }
+    });
+    return { transactions: query.data || [], loading: query.isLoading, refresh: query.refetch };
+};
+
+export const useRechargeRequests = () => {
+    const query = useQuery({
+        queryKey: ['recharge-requests'],
+        queryFn: getRechargeRequests,
+        refetchInterval: 5000,
+    });
+    return { requests: query.data || [], loading: query.isLoading, refresh: query.refetch };
+};
+
+

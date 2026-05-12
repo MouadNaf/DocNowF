@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\DB;
 use App\Models\DoctorAvailability;
 use App\Models\DoctorUnavailability;
 use App\Models\Secretary;
-use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
@@ -23,7 +22,7 @@ class PrivateCabinetController extends Controller
       }
 
 
-        $cabinet = PrivateCabinet::with(['appointments', 'doctorAvailabilities', 'doctorUnavailabilities', 'secretaries', 'subscriptions'])
+        $cabinet = PrivateCabinet::with(['appointments', 'doctorAvailabilities', 'doctorUnavailabilities', 'secretaries'])
             ->where('doctor_id', $doctor->id)
             ->first();
 
@@ -584,24 +583,6 @@ public function deleteSecretary($id)
     ]);
 }
 
-public function getSubscription()
-{
-    $doctor = Auth::user()->doctor;
-    $cabinet = $doctor->privateCabinet;
-    
-    if (!$cabinet) {
-        return response()->json(['message' => 'Cabinet not found'], 404);
-    }
-    
-    $subscription = $cabinet->subscriptions()
-        ->where('status', 'active')
-        ->first();
-    
-    return response()->json([
-        'success' => true,
-        'subscription' => $subscription
-    ]);
-}
 
 
 }

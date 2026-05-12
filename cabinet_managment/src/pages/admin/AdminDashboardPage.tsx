@@ -8,7 +8,11 @@ import {
   UserPlus,
   ShoppingBag,
   AlertTriangle,
-  FileCheck
+  FileCheck,
+  Wallet,
+  Check,
+  X,
+  ExternalLink
 } from 'lucide-react';
 import { 
   LineChart, 
@@ -54,10 +58,45 @@ const activity = [
 
 export function AdminDashboardPage() {
   const [stats, setStats] = useState<any>(null);
+  const [rechargeRequests, setRechargeRequests] = useState<any[]>([]);
+  const [loadingRequests, setLoadingRequests] = useState(true);
+
+  const fetchRequests = async () => {
+    setLoadingRequests(true);
+    try {
+      const res = await adminService.getRechargeRequests();
+      setRechargeRequests(res.data || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingRequests(false);
+    }
+  };
 
   useEffect(() => {
     adminService.getStats().then(setStats).catch(console.error);
+    fetchRequests();
   }, []);
+
+  const handleApprove = async (id: number) => {
+    try {
+      await adminService.approveRecharge(id);
+      fetchRequests();
+    } catch (err) {
+      alert('Failed to approve');
+    }
+  };
+
+  const handleReject = async (id: number) => {
+    const reason = prompt('Reason for rejection:');
+    if (reason === null) return;
+    try {
+      await adminService.rejectRecharge(id, reason);
+      fetchRequests();
+    } catch (err) {
+      alert('Failed to reject');
+    }
+  };
 
   const tomorrow = new Date();
   

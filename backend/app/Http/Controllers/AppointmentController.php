@@ -6,6 +6,7 @@ use App\Models\Doctor;
 use App\Models\Appointment;
 use App\Models\DoctorAvailability;
 use App\Models\DoctorUnavailability;
+use App\Models\PrivateCabinet;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -22,6 +23,21 @@ class AppointmentController extends Controller
 
     if (!$doctor) {
         return response()->json(['success' => false, 'message' => 'Doctor not found'], 404);
+    }
+
+    // 🔹 Wallet Balance Check
+    $walletService = app(\App\Services\WalletService::class);
+    if (!$walletService->canBook($doctor)) {
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'doctor_name' => $doctor->user->name,
+                'date' => $date,
+                'location_type' => $cabinetType,
+                'slots' => [],
+            ],
+            'message' => 'Doctor is temporarily unavailable (Insufficient wallet balance).'
+        ]);
     }
 
     // 2. Get slot duration + location filter
@@ -230,6 +246,15 @@ $slots = array_values($slots);
         return response()->json(['message' => 'Doctor not found'], 404);
     }
 
+    // 🔹 Wallet Balance Check
+    $walletService = app(\App\Services\WalletService::class);
+    if (!$walletService->canBook($doctor)) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Doctor is temporarily unavailable for new bookings (Insufficient wallet balance).'
+        ], 403);
+    }
+
     // 🔹 Identify patient
     if (Auth::user()->role === 'patient') {
         $patientId = Auth::user()->patient->id;
@@ -280,11 +305,18 @@ $slots = array_values($slots);
         ->where('status', 'cancelled')
         ->first();
 
-    if ($cancelledAppointment) {
-        $cancelledAppointment->update([
-            'patient_id' => $patientId,
-            'status' => 'confirmed',
-        ]);
+        if ($cancelledAppointment) {
+            $fee = 0;
+            if ($request->cabinet_type === 'private') {
+                $cabinet = PrivateCabinet::find($request->cabinet_id);
+                $fee = $cabinet ? $cabinet->consultation_price : 0;
+            }
+
+            $cancelledAppointment->update([
+                'patient_id' => $patientId,
+                'status' => 'confirmed',
+                'consultation_fee' => $fee,
+            ]);
 
         return response()->json([
             'success' => true,
@@ -296,12 +328,19 @@ $slots = array_values($slots);
     try {
         // 🔹 Create new appointment
         $appointment = DB::transaction(function () use ($doctor, $patientId, $request, $locationData) {
+            $fee = 0;
+            if ($request->cabinet_type === 'private') {
+                $cabinet = PrivateCabinet::find($request->cabinet_id);
+                $fee = $cabinet ? $cabinet->consultation_price : 0;
+            }
+
             return Appointment::create([
                 'doctor_id' => $doctor->id,
                 'patient_id' => $patientId,
                 'appointment_date' => $request->appointment_date,
                 'start_time' => $request->start_time,
                 'status' => 'confirmed',
+                'consultation_fee' => $fee,
                 ...$locationData
             ]);
         });

@@ -35,6 +35,7 @@ import { ClinicLayout } from '@/widgets/layout/ClinicLayout'
 import { AdminLayout } from '@/widgets/layout/AdminLayout'
 import { AdminDashboardPage } from '@/pages/admin/AdminDashboardPage'
 import { AdminUsersPage } from '@/pages/admin/AdminUsersPage'
+import { AdminWalletPage } from '@/pages/admin/AdminWalletPage'
 import { usePreferencesStore } from '@/store/preferences.store'
 import { t } from '@/lib/i18n'
 
@@ -91,6 +92,7 @@ export default function App() {
 
         <Route path={ROUTES.ADMIN_DASHBOARD} element={<ProtectedRoute><AdminLayout><AdminDashboardPage /></AdminLayout></ProtectedRoute>} />
         <Route path={ROUTES.ADMIN_USERS} element={<ProtectedRoute><AdminLayout><AdminUsersPage /></AdminLayout></ProtectedRoute>} />
+        <Route path={ROUTES.ADMIN_WALLET} element={<ProtectedRoute><AdminLayout><AdminWalletPage /></AdminLayout></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>

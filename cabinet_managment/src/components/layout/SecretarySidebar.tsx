@@ -1,4 +1,4 @@
-﻿import { Calendar, ClipboardList, Clock, LayoutDashboard, LogOut, Settings, UserPlus, Users } from 'lucide-react'
+import { Calendar, ClipboardList, Clock, LayoutDashboard, LogOut, Settings, UserPlus, Users } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { ROUTES } from '@/constants/routes'
 import { MOCK_SECRETARY } from '@/lib/mock/secretary.mock'
@@ -22,7 +22,7 @@ export function SecretarySidebar({ onLogout }: { onLogout: () => void }) {
   return (
     <aside className="hidden md:flex w-[220px] bg-white border-r border-gray-200 flex-col">
       <div className="p-4 border-b border-gray-100">
-        <p className="font-bold text-gray-900">Takwit Health</p>
+        <p className="font-bold text-gray-900">DocNow</p>
         <div className="mt-3 rounded-lg p-3 bg-[#E8F7F1]">
           <p className="text-sm font-semibold">{`Dr. ${MOCK_SECRETARY.assignedDoctor.firstName} ${MOCK_SECRETARY.assignedDoctor.lastName}`}</p>
           <p className="text-xs text-gray-600">{MOCK_SECRETARY.assignedDoctor.specialization[0]}</p>

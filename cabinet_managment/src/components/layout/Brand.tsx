@@ -9,7 +9,7 @@ export function Brand() {
           <rect x="11.5" y="11.5" width="7.5" height="7.5" rx="2.5" fill="#9FE1CB" />
         </svg>
       </div>
-      <span className="text-[17px] font-semibold tracking-tight text-gray-900 dark:text-slate-100">Takwit Health</span>
+      <span className="text-[17px] font-semibold tracking-tight text-gray-900 dark:text-slate-100">DocNow</span>
     </div>
   )
 }

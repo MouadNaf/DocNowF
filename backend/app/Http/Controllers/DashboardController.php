@@ -25,11 +25,16 @@ class DashboardController extends Controller
             ->where('payment_status', 'paid')
             ->sum('consultation_fee');
 
+        $doctor = Doctor::find($doctorId);
+
         return response()->json([
             'todayAppointments' => Appointment::where('doctor_id', $doctorId)->where('appointment_date', $today)->count(),
             'totalPatients'     => Patient::whereHas('appointments', fn($q) => $q->where('doctor_id', $doctorId))->count(),
             'noShows'           => Appointment::where('doctor_id', $doctorId)->where('status', 'no_show')->count(),
             'revenueToday'      => (float) $revenueToday,
+            'wallet_balance'    => (float) ($doctor->wallet_balance ?? 0),
+            'low_balance'       => ($doctor->wallet_balance ?? 0) <= ($doctor->low_balance_threshold ?? 100),
+            'is_exhausted'      => ($doctor->wallet_balance ?? 0) <= 0,
         ]);
     }
 
@@ -145,6 +150,15 @@ class DashboardController extends Controller
             return response()->json(['message' => 'Doctor not found or unauthorized'], 403);
         }
 
+        $doctor = Doctor::find($doctorId);
+        $walletService = app(\App\Services\WalletService::class);
+        if (!$walletService->canBook($doctor)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Insufficient wallet balance to create new appointments.'
+            ], 403);
+        }
+
         // Find or create Patient
         if ($request->filled('patient_id')) {
             $patient = Patient::findOrFail($request->patient_id);
@@ -188,12 +202,19 @@ class DashboardController extends Controller
             $location['private_cabinet_id'] = $auth->doctor?->privateCabinet?->id;
         }
 
+        $fee = 0;
+        if ($location['private_cabinet_id']) {
+            $cabinet = \App\Models\PrivateCabinet::find($location['private_cabinet_id']);
+            $fee = $cabinet ? $cabinet->consultation_price : 0;
+        }
+
         $appointment = Appointment::create([
             'doctor_id'             => $doctorId,
             'patient_id'            => $patient->id,
             'appointment_date'      => $request->appointment_date ?? $now->toDateString(),
             'start_time'            => $request->start_time ?? $now->format('H:i'),
             'status'                => 'confirmed',
+            'consultation_fee'      => $fee,
             'private_cabinet_id'    => $location['private_cabinet_id'],
             'clinic_id'             => $location['clinic_id'],
             'collective_cabinet_id' => $location['collective_cabinet_id'],
@@ -500,23 +521,19 @@ class DashboardController extends Controller
     private function formatAppointment(Appointment $a): array
     {
         return [
-            'id'              => (string)$a->id,
-            'status'          => $a->status,
-            'paymentStatus'   => $a->payment_status ?? 'unpaid',
-            'payment_status'  => $a->payment_status ?? 'unpaid',
-            'consultationFee' => $a->consultation_fee ?? 0,
-            'fee'             => $a->consultation_fee ?? 0,
-            'notes'           => $a->cancellation_reason ?? $a->reason,
-            'scheduled_at'    => $a->appointment_date . ' ' . $a->start_time,
-            'date'            => $a->appointment_date,
-            'time'            => $a->start_time,
-            'patientId'       => (string)$a->patient_id,
-            'patient_id'      => $a->patient_id,
-            'name'            => $a->patient?->user?->name,
-            'phone'           => $a->patient?->user?->phone_number,
-            'gender'          => $a->patient?->user?->gender,
-            'visitType'       => $a->reason ?? 'consultation',
-            'arrived_at'      => null
+            'id'               => $a->id,
+            'appointment_date' => $a->appointment_date,
+            'start_time'       => $a->start_time,
+            'status'           => $a->status,
+            'payment_status'   => $a->payment_status ?? 'unpaid',
+            'consultation_fee' => $a->consultation_fee ?? 0,
+            'patient_id'       => $a->patient_id,
+            'patient'          => [
+                'id'    => $a->patient_id,
+                'name'  => $a->patient?->user?->name,
+                'phone' => $a->patient?->user?->phone_number,
+            ],
+            'scheduled_at'     => $a->appointment_date . ' ' . $a->start_time,
         ];
     }
 

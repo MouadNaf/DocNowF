@@ -18,11 +18,11 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       isAuthenticated: false,
       setAuth: (user, token) => {
-        localStorage.setItem('takwit_access_token', token)
+        localStorage.setItem('docnow_access_token', token)
         set({ user, token, isAuthenticated: true })
       },
       logout: () => {
-        localStorage.removeItem('takwit_access_token')
+        localStorage.removeItem('docnow_access_token')
         set({ user: null, token: null, isAuthenticated: false })
       },
       updateUser: (partial) =>
@@ -30,6 +30,6 @@ export const useAuthStore = create<AuthState>()(
           user: state.user ? { ...state.user, ...partial } : null,
         })),
     }),
-    { name: 'takwit_auth' },
+    { name: 'docnow_auth' },
   ),
 )

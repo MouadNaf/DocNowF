@@ -1,4 +1,4 @@
-﻿import { useMemo } from 'react'
+import { useMemo } from 'react'
 import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard,
@@ -61,7 +61,7 @@ export function Sidebar({ role, onLogout }: { role: string; onLogout: () => void
             <CalendarDays size={24} />
           </div>
           <div>
-            <h1 className="text-xl font-semibold text-gray-900 leading-tight">Takwit Health</h1>
+            <h1 className="text-xl font-semibold text-gray-900 leading-tight">DocNow</h1>
             <span className="text-sm font-medium text-gray-400 capitalize">{role === 'doctor' ? t(language, 'doctor') : role === 'secretary' ? t(language, 'secretary') : role}</span>
           </div>
         </div>

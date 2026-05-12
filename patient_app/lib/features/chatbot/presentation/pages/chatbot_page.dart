@@ -39,7 +39,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
   final List<_ChatMessage> _messages = [
     const _ChatMessage(
       text:
-          'Hello! I am your Takwit Health assistant 👋\nHow can I help you today?\n\n'
+          'Hello! I am your DocNow assistant 👋\nHow can I help you today?\n\n'
           'I can help you:\n• Search for doctors\n• Check availability\n• Book or cancel appointments\n• View your appointments',
       isBot: true,
     ),

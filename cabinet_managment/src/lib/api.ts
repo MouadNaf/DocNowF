@@ -13,7 +13,7 @@ api.interceptors.request.use((config) => {
   let token = null;
   // Try to parse token from Zustand persist
   try {
-    const persistState = localStorage.getItem('takwit_auth');
+    const persistState = localStorage.getItem('docnow_auth');
     if (persistState) {
       const parsed = JSON.parse(persistState);
       token = parsed?.state?.token;
@@ -24,7 +24,7 @@ api.interceptors.request.use((config) => {
   
   // Fallback
   if (!token) {
-    token = localStorage.getItem('takwit_access_token');
+    token = localStorage.getItem('docnow_access_token');
   }
 
   if (token) {

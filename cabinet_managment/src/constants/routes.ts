@@ -33,6 +33,7 @@ export const ROUTES = {
   CABINET_DASHBOARD: '/cabinet-admin/dashboard',
   ADMIN_DASHBOARD: '/admin/dashboard',
   ADMIN_USERS: '/admin/users',
+  ADMIN_WALLET: '/admin/wallet',
 } as const
 
 export const ROLE_HOME: Record<string, string> = {

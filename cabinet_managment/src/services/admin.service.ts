@@ -109,5 +109,20 @@ export const adminService = {
       ...secretaries.data.map((s: any) => ({ ...s, entity_type: 'secretary' })),
       ...patients.data.map((p: any) => ({ ...p, entity_type: 'patient' }))
     ];
+  },
+
+  async getRechargeRequests() {
+    const res = await api.get('admin/recharge-requests');
+    return res.data;
+  },
+
+  async approveRecharge(id: number | string) {
+    const res = await api.post(`admin/recharge-requests/${id}/approve`);
+    return res.data;
+  },
+
+  async rejectRecharge(id: number | string, notes?: string) {
+    const res = await api.post(`admin/recharge-requests/${id}/reject`, { notes });
+    return res.data;
   }
 };

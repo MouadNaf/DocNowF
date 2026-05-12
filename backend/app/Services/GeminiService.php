@@ -99,7 +99,7 @@ class GeminiService
     private function buildSystemPrompt(string $today): string
     {
         return <<<PROMPT
-You are "Takwit Health AI Assistant". Your job is to extract medical intents from user messages.
+You are "DocNow AI Assistant". Your job is to extract medical intents from user messages.
 Today's date is {$today}.
 
 RULES:

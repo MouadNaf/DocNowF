@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { DoctorLayout } from '@/widgets/layout/DoctorLayout';
 import { StatCard } from '@/components/ui/StatCard';
-import { Calendar, Users, XCircle, DollarSign, Building2, MapPin, Phone, Mail, User, Briefcase, DollarSign as DollarIcon, Clock, FileText } from 'lucide-react';
+import { Calendar, Users, XCircle, DollarSign, Building2, MapPin, Phone, Mail, User, Briefcase, DollarSign as DollarIcon, Clock, FileText, AlertCircle } from 'lucide-react';
 import { useDashboardStats, useAppointments } from '@/shared/api/hooks';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
@@ -264,7 +264,8 @@ export function DoctorDashboardPage() {
                 {statsLoading ? (
                     <div className="flex justify-center p-8"><p>Loading stats...</p></div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
                         <StatCard 
                             title="Today's Appointments" 
                             value={stats?.todayAppointments.toString() || '0'} 
@@ -293,7 +294,32 @@ export function DoctorDashboardPage() {
                             iconBgClass="bg-green-50"
                             iconColorClass="text-green-500"
                         />
+                        <StatCard 
+                            title="Wallet Balance" 
+                            value={`${stats?.wallet_balance || 0} DZD`} 
+                            icon={<DollarSign size={24} />} 
+                            iconBgClass={stats?.is_exhausted ? "bg-red-50" : (stats?.low_balance ? "bg-orange-50" : "bg-emerald-50")}
+                            iconColorClass={stats?.is_exhausted ? "text-red-500" : (stats?.low_balance ? "text-orange-500" : "text-[#1D9E75]")}
+                            subtext={stats?.is_exhausted ? "Exhausted!" : (stats?.low_balance ? "Low Balance" : "Active")}
+                            subtextColorClass={stats?.is_exhausted ? "text-red-500" : (stats?.low_balance ? "text-orange-500" : "text-emerald-500")}
+                        />
                     </div>
+
+                    {stats?.low_balance && (
+                        <div className={`mb-8 p-4 rounded-2xl border flex items-center justify-between ${stats?.is_exhausted ? 'bg-red-50 border-red-100 text-red-700' : 'bg-orange-50 border-orange-100 text-orange-700'}`}>
+                            <div className="flex items-center gap-3">
+                                <AlertCircle size={20} />
+                                <div>
+                                    <p className="font-bold">{stats?.is_exhausted ? 'Wallet Exhausted' : 'Low Wallet Balance'}</p>
+                                    <p className="text-sm">{stats?.is_exhausted ? 'You cannot receive new bookings until you recharge.' : 'Recharge soon to avoid booking interruptions.'}</p>
+                                </div>
+                            </div>
+                            <Button size="sm" variant={stats?.is_exhausted ? 'primary' : 'outline'} className="rounded-xl px-6" onClick={() => navigate('/doctor/accounting')}>
+                                Recharge Now
+                            </Button>
+                        </div>
+                    )}
+                    </>
                 )}
 
                 <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
@@ -331,20 +357,19 @@ export function DoctorDashboardPage() {
                                     >
                                         <div className="flex items-center gap-6">
                                             <div className="text-center w-16">
-                                                <p className="text-lg font-bold text-gray-900">{apt.time}</p>
+                                                <p className="text-lg font-bold text-gray-900">{apt.start_time}</p>
                                             </div>
                                             <div className="h-10 w-px bg-gray-200"></div>
                                             <div>
-                                                <p className="text-base font-bold text-gray-900">{apt.name || `Patient #${apt.patientId}`}</p>
-                                                <p className="text-sm font-medium text-gray-500 capitalize">{apt.visitType.replace('_', ' ')}</p>
+                                                <p className="text-base font-bold text-gray-900">{apt.patient?.name || `Patient #${apt.patient_id}`}</p>
                                             </div>
                                         </div>
                                         <div className="flex gap-2">
                                             <span className={`text-xs font-bold px-3 py-1.5 rounded-full ${getStatusColor(apt.status)} capitalize`}>
                                                 {apt.status.replace('_', ' ')}
                                             </span>
-                                            <span className={`text-xs font-bold px-3 py-1.5 rounded-full ${getPaymentColor(apt.paymentStatus)} capitalize`}>
-                                                {apt.paymentStatus}
+                                            <span className={`text-xs font-bold px-3 py-1.5 rounded-full ${getPaymentColor(apt.payment_status)} capitalize`}>
+                                                {apt.payment_status}
                                             </span>
                                         </div>
                                     </div>

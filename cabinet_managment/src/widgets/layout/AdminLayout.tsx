@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Users, 
-  CreditCard, 
+  Wallet, 
   Receipt, 
   AlertCircle, 
   Activity,
@@ -33,7 +33,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const menuItems = [
     { label: 'Tableau de bord', icon: LayoutDashboard, path: ROUTES.ADMIN_DASHBOARD },
     { label: 'Utilisateurs', icon: Users, path: ROUTES.ADMIN_USERS },
-    { label: 'Abonnements', icon: CreditCard, path: '/admin/subscriptions' },
+    { label: 'Recharges Portefeuille', icon: Wallet, path: ROUTES.ADMIN_WALLET },
     { label: 'Paiements', icon: Receipt, path: '/admin/payments' },
     { label: 'Plaintes', icon: AlertCircle, path: '/admin/complaints' },
     { label: 'Activité', icon: Activity, path: '/admin/activity' },

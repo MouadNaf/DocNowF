@@ -102,23 +102,20 @@ export function DoctorAppointmentsPage() {
                                     >
                                         <div className="flex items-center gap-8 w-full md:w-auto">
                                             <div className="text-center min-w-[100px] p-3 bg-gray-50 rounded-2xl group-hover:bg-white transition-colors">
-                                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{apt.date}</p>
+                                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{apt.appointment_date}</p>
                                                 <p className="text-xl font-black text-gray-900 flex items-center justify-center gap-1">
                                                     <Clock size={16} className="text-[#1D9E75]" />
-                                                    {apt.time}
+                                                    {apt.start_time}
                                                 </p>
                                             </div>
                                             
                                             <div className="flex items-center gap-4">
                                                 <div className="size-12 rounded-2xl bg-[#f0f9f6] text-[#1D9E75] flex items-center justify-center font-black text-lg">
-                                                    {apt.name?.charAt(0) || <User size={20} />}
+                                                    {apt.patient?.name?.charAt(0) || <User size={20} />}
                                                 </div>
                                                 <div>
                                                     <p className="text-lg font-bold text-gray-900 group-hover:text-[#1D9E75] transition-colors">
-                                                        {apt.name || `Patient #${apt.patientId}`}
-                                                    </p>
-                                                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                        {apt.visitType.replace('_', ' ')}
+                                                        {apt.patient?.name || `Patient #${apt.patient_id}`}
                                                     </p>
                                                 </div>
                                             </div>

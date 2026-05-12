@@ -10,7 +10,7 @@ export function AuthHeroPanel({ className = '' }: { className?: string }) {
   return (
     <aside
       className={`relative flex min-h-\[220px\] flex-col overflow-hidden bg-[#0f3d2f] px-8 py-10 text-white lg:max-h-screen lg:min-h-screen lg:overflow-y-auto lg:px-10 lg:py-12 ${className}`}
-      aria-label="Takwit Health overview"
+      aria-label="DocNow overview"
     >
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.12]"
@@ -29,7 +29,7 @@ export function AuthHeroPanel({ className = '' }: { className?: string }) {
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/20">
           <span className="text-xl font-light leading-none text-white">+</span>
         </div>
-        <span className="text-lg font-semibold tracking-tight">Takwit Health</span>
+        <span className="text-lg font-semibold tracking-tight">DocNow</span>
       </div>
 
       <div className="relative .z-\[1\] mt-8 lg:mt-14">
@@ -69,7 +69,7 @@ export function AuthHeroPanel({ className = '' }: { className?: string }) {
 
       <figure className="relative .z-\[1\] mt-8 rounded-2xl border border-white/10 bg-white\/\[0.08\] p-4 backdrop-blur-sm lg:mt-8">
         <blockquote className="text-sm leading-relaxed text-white/90">
-          &ldquo;Takwit cut our no-shows and gave us one clear schedule across two sites.&rdquo;
+          &ldquo;DocNow cut our no-shows and gave us one clear schedule across two sites.&rdquo;
         </blockquote>
         <figcaption className="mt-3 flex items-center gap-3">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#1d9e75]/40 text-xs font-semibold text-white ring-2 ring-white/20">

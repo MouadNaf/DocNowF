@@ -3,6 +3,9 @@
 export interface SecretaryAppointment {
   id: number
   status: string
+  payment_status: string
+  fee: number
+  notes: string | null
   scheduled_at: string
   date: string
   time: string
@@ -10,6 +13,7 @@ export interface SecretaryAppointment {
   name: string | null
   phone: string | null
   gender: string | null
+  arrived_at: string | null
 }
 
 export interface SecretaryPatient {

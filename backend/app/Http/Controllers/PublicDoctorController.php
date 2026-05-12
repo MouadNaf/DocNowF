@@ -72,6 +72,7 @@ class PublicDoctorController extends Controller
                     'cabinet_type' => 'private',
                     'is_verified' => (bool) $doctor->is_verified,
                     'is_active' => (bool) $doctor->is_active,
+                    'is_available' => $doctor->wallet_balance > 0,
                     'is_favorite' => in_array($doctor->id, $favoriteIds),
                 ];
             });
