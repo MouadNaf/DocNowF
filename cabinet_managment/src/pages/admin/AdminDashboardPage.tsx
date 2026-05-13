@@ -30,34 +30,11 @@ import { cn } from '@/lib/utils/cn';
 import { adminService } from '@/services/admin.service';
 import { useEffect, useState } from 'react';
 
-const userData = [
-  { name: 'Jan', users: 120 },
-  { name: 'Feb', users: 145 },
-  { name: 'Mar', users: 170 },
-  { name: 'Apr', users: 195 },
-  { name: 'May', users: 220 },
-  { name: 'Jun', users: 248 },
-];
-
-const revenueData = [
-  { name: 'Jan', revenue: 12000 },
-  { name: 'Feb', revenue: 15600 },
-  { name: 'Mar', revenue: 14200 },
-  { name: 'Apr', revenue: 16800 },
-  { name: 'May', revenue: 19200 },
-  { name: 'Jun', revenue: 22400 },
-];
-
-const activity = [
-  { id: 1, type: 'registration', text: 'Nouveau médecin inscrit', user: 'Dr. Ahmed Benali', time: '5 min', icon: UserPlus, color: 'text-blue-500', bg: 'bg-blue-50' },
-  { id: 2, type: 'subscription', text: 'Abonnement acheté', user: 'Dr. Sarah Johnson', time: '15 min', icon: ShoppingBag, color: 'text-emerald-500', bg: 'bg-emerald-50' },
-  { id: 3, type: 'complaint', text: 'Plainte reçue', user: 'Dr. Omar Khalil', time: '30 min', icon: AlertTriangle, color: 'text-red-500', bg: 'bg-red-50' },
-  { id: 4, type: 'suspension', text: 'Compte suspendu', user: 'Secrétaire Marie Dupont', time: '1h', icon: AlertTriangle, color: 'text-orange-500', bg: 'bg-orange-50' },
-  { id: 5, type: 'verification', text: 'Vérification approuvée', user: 'Dr. Fatima Zahra', time: '2h', icon: FileCheck, color: 'text-teal-500', bg: 'bg-teal-50' },
-];
-
 export function AdminDashboardPage() {
   const [stats, setStats] = useState<any>(null);
+  const [userGrowth, setUserGrowth] = useState<any[]>([]);
+  const [revenueGrowth, setRevenueGrowth] = useState<any[]>([]);
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [rechargeRequests, setRechargeRequests] = useState<any[]>([]);
   const [loadingRequests, setLoadingRequests] = useState(true);
 
@@ -75,6 +52,9 @@ export function AdminDashboardPage() {
 
   useEffect(() => {
     adminService.getStats().then(setStats).catch(console.error);
+    adminService.getUserGrowth().then(setUserGrowth).catch(console.error);
+    adminService.getRevenueGrowth().then(setRevenueGrowth).catch(console.error);
+    adminService.getRecentActivity().then(setRecentActivity).catch(console.error);
     fetchRequests();
   }, []);
 
@@ -98,6 +78,16 @@ export function AdminDashboardPage() {
     }
   };
 
+  const getActivityIcon = (type: string) => {
+    switch (type) {
+      case 'doctor': return { icon: UserPlus, color: 'text-blue-500', bg: 'bg-blue-50' };
+      case 'patient': return { icon: UserPlus, color: 'text-emerald-500', bg: 'bg-emerald-50' };
+      case 'secretary': return { icon: UserPlus, color: 'text-orange-500', bg: 'bg-orange-50' };
+      case 'clinic': return { icon: ShoppingBag, color: 'text-purple-500', bg: 'bg-purple-50' };
+      default: return { icon: FileCheck, color: 'text-gray-500', bg: 'bg-gray-50' };
+    }
+  };
+
   const tomorrow = new Date();
   
   return (
@@ -116,7 +106,7 @@ export function AdminDashboardPage() {
         <AdminStatCard 
           label="Total utilisateurs" 
           value={stats?.total_users?.toString() || '0'} 
-          trend="12%" 
+          trend={stats?.total_users > 0 ? "Real" : "0%"} 
           trendUp={true} 
           icon={<Users size={24} />} 
           iconBgColor="bg-blue-50" 
@@ -125,7 +115,7 @@ export function AdminDashboardPage() {
         <AdminStatCard 
           label="Total rendez-vous" 
           value={stats?.total_appointments?.toLocaleString() || '0'} 
-          trend="8%" 
+          trend={stats?.total_appointments > 0 ? "Real" : "0%"} 
           trendUp={true} 
           icon={<Calendar size={24} />} 
           iconBgColor="bg-indigo-50" 
@@ -133,8 +123,8 @@ export function AdminDashboardPage() {
         />
         <AdminStatCard 
           label="Revenu total" 
-          value={`$${stats?.total_revenue?.toLocaleString() || '0'}`} 
-          trend="15%" 
+          value={`${stats?.total_revenue?.toLocaleString() || '0'} DA`} 
+          trend={stats?.total_revenue > 0 ? "Real" : "0%"} 
           trendUp={true} 
           icon={<DollarSign size={24} />} 
           iconBgColor="bg-emerald-50" 
@@ -161,7 +151,7 @@ export function AdminDashboardPage() {
           </div>
           <div style={{ width: '100%', height: 300 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={userData}>
+              <LineChart data={userGrowth}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94A3B8', fontSize: 12}} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{fill: '#94A3B8', fontSize: 12}} />
@@ -194,7 +184,7 @@ export function AdminDashboardPage() {
           </div>
           <div style={{ width: '100%', height: 300 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={revenueData}>
+              <BarChart data={revenueGrowth}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94A3B8', fontSize: 12}} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{fill: '#94A3B8', fontSize: 12}} />
@@ -213,20 +203,27 @@ export function AdminDashboardPage() {
       <div className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm">
         <h3 className="text-lg font-bold text-gray-900 mb-8">Activité récente</h3>
         <div className="space-y-4">
-          {activity.map((item) => (
-            <div key={item.id} className="flex items-center justify-between p-4 rounded-2xl hover:bg-gray-50 transition-colors group cursor-pointer">
-              <div className="flex items-center gap-5">
-                <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110", item.bg, item.color)}>
-                  <item.icon size={22} />
+          {recentActivity.length === 0 ? (
+            <p className="text-center text-gray-500 py-4">Aucune activité récente</p>
+          ) : (
+            recentActivity.map((item) => {
+              const { icon: Icon, color, bg } = getActivityIcon(item.type);
+              return (
+                <div key={item.id} className="flex items-center justify-between p-4 rounded-2xl hover:bg-gray-50 transition-colors group cursor-pointer">
+                  <div className="flex items-center gap-5">
+                    <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110", bg, color)}>
+                      <Icon size={22} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-gray-900">{item.text}</p>
+                      <p className="text-xs font-medium text-gray-500 mt-0.5">{item.user}</p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-bold text-gray-400">{item.time}</span>
                 </div>
-                <div>
-                  <p className="text-sm font-bold text-gray-900">{item.text}</p>
-                  <p className="text-xs font-medium text-gray-500 mt-0.5">{item.user}</p>
-                </div>
-              </div>
-              <span className="text-xs font-bold text-gray-400">{item.time}</span>
-            </div>
-          ))}
+              );
+            })
+          )}
         </div>
       </div>
     </div>

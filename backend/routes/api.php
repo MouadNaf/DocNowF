@@ -165,6 +165,12 @@ Route::middleware('auth:sanctum')->group(function () {
         ->prefix('admin')
         ->group(function () {
 
+            // Dashboard stats & charts
+            Route::get('/stats',            [AdminController::class, 'getStats']);
+            Route::get('/recent-activity',  [AdminController::class, 'getRecentActivity']);
+            Route::get('/user-growth',      [AdminController::class, 'getUserGrowth']);
+            Route::get('/revenue-growth',   [AdminController::class, 'getRevenueGrowth']);
+
             Route::get('/doctors', [AdminController::class, 'getAllDoctors']);
             Route::get('/doctors/pending', [AdminController::class, 'getPendingDoctors']);
             Route::post('/doctors/{id}/approve', [AdminController::class, 'approveDoctor']);

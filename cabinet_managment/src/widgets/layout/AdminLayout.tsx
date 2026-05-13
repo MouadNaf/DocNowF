@@ -45,11 +45,29 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       <aside className="w-64 bg-white border-r border-gray-100 flex flex-col shrink-0 overflow-y-auto">
         <div className="p-6">
           <div className="flex items-center gap-3">
-            <div className="bg-[#1D9E75] p-2 rounded-xl text-white shadow-lg shadow-emerald-100">
-              <LayoutDashboard size={24} />
+            <div className="h-10 w-10 shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" className="h-full w-full">
+                <defs>
+                  <linearGradient id="adminHeart" x1="12" y1="10" x2="54" y2="54" gradientUnits="userSpaceOnUse">
+                    <stop stopColor="#35C97D" />
+                    <stop offset="1" stopColor="#1D9E75" />
+                  </linearGradient>
+                </defs>
+                <path
+                  d="M32 62c-1.1 0-2.1-.3-3-1.1C12.8 47.8 2.2 38.4 2.2 26.8 2.2 17.2 9.8 9.6 19.2 9.6c5.1 0 9.8 2.3 12.8 6.3 3-4 7.7-6.3 12.8-6.3 9.4 0 17 7.6 17 17.2 0 11.6-10.6 21-26.8 34.1-.9.8-1.9 1.1-3 1.1z"
+                  fill="url(#adminHeart)"
+                />
+                <path
+                  d="M8 34h13l3.6-8.2 5.3 15.4 4.5-10.2h21"
+                  stroke="#F4FFF7"
+                  strokeWidth="3.9"
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                />
+              </svg>
             </div>
             <div>
-              <h1 className="text-lg font-bold text-gray-900 leading-tight">MedScheduler</h1>
+              <h1 className="text-lg font-bold text-gray-900 leading-tight">DocNow</h1>
               <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Administrateur</span>
             </div>
           </div>

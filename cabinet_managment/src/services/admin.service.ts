@@ -1,18 +1,25 @@
 import api from '@/lib/api';
 
-const wait = (ms = 500) => new Promise(resolve => setTimeout(resolve, ms));
-
 export const adminService = {
-  // Stats not yet implemented in Laravel backend, keeping mock
+
   async getStats() {
-    await wait();
-    return {
-      total_doctors: 45,
-      total_clinics: 12,
-      total_cabinets: 8,
-      pending_approvals: 5,
-      revenue_growth: 15.5
-    };
+    const res = await api.get('admin/stats');
+    return res.data;
+  },
+
+  async getRecentActivity() {
+    const res = await api.get('admin/recent-activity');
+    return res.data.data ?? [];
+  },
+
+  async getUserGrowth() {
+    const res = await api.get('admin/user-growth');
+    return res.data.data ?? [];
+  },
+
+  async getRevenueGrowth() {
+    const res = await api.get('admin/revenue-growth');
+    return res.data.data ?? [];
   },
 
   async getAllDoctors() {
