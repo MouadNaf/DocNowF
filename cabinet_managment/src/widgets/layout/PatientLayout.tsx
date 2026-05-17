@@ -1,43 +1,45 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
-  Users, 
+  Calendar, 
   Wallet, 
-  Receipt, 
-  AlertCircle, 
-  Activity,
+  History, 
+  MessageSquare, 
+  Heart, 
+  Settings, 
+  HelpCircle,
   LogOut,
   Bell,
   Search,
   ChevronDown,
-  Settings
+  User
 } from 'lucide-react';
 import { ROUTES } from '@/constants/routes';
 import { useAuthStore } from '@/store/auth.store';
 import { cn } from '@/lib/utils/cn';
 import { Logo } from '@/components/ui/Logo';
 
-interface AdminLayoutProps {
+interface PatientLayoutProps {
   children: React.ReactNode;
 }
 
-export function AdminLayout({ children }: AdminLayoutProps) {
+export function PatientLayout({ children }: PatientLayoutProps) {
+  const { user, logout } = useAuthStore();
   const navigate = useNavigate();
-  const logout = useAuthStore((s) => s.logout);
 
   const handleLogout = () => {
     logout();
-    navigate(ROUTES.LOGIN, { replace: true });
+    navigate(ROUTES.LANDING);
   };
 
   const menuItems = [
-    { label: 'Tableau de bord', icon: LayoutDashboard, path: ROUTES.ADMIN_DASHBOARD },
-    { label: 'Utilisateurs', icon: Users, path: ROUTES.ADMIN_USERS },
-    { label: 'Recharges Portefeuille', icon: Wallet, path: ROUTES.ADMIN_WALLET },
-    { label: 'Paiements', icon: Receipt, path: '/admin/payments' },
-    { label: 'Plaintes', icon: AlertCircle, path: '/admin/complaints' },
-    { label: 'Activité', icon: Activity, path: '/admin/activity' },
+    { label: 'Tableau de bord', icon: LayoutDashboard, path: ROUTES.PATIENT_DASHBOARD },
+    { label: 'Mes Rendez-vous', icon: Calendar, path: ROUTES.PATIENT_APPOINTMENTS },
+    { label: 'Mon Portefeuille', icon: Wallet, path: '/patient/wallet' },
+    { label: 'Historique Médical', icon: History, path: ROUTES.PATIENT_RECORDS },
+    { label: 'Messages', icon: MessageSquare, path: '/patient/messages' },
+    { label: 'Médecins Favoris', icon: Heart, path: ROUTES.PATIENT_FAVORITES },
   ];
 
   return (
@@ -46,9 +48,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       <aside className="w-64 bg-white border-r border-gray-100 flex flex-col shrink-0 overflow-y-auto">
         <div className="p-6">
           <Logo />
-          <span className="text-[10px] font-black text-[#1D9E75] uppercase tracking-[0.2em] mt-2 block pl-11">
-            Admin
-          </span>
         </div>
 
         <nav className="flex-1 px-4 py-4 space-y-1">
@@ -57,7 +56,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               key={item.path}
               to={item.path}
               className={({ isActive }) => cn(
-                "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group font-bold text-sm",
+                "flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 group font-bold text-sm",
                 isActive 
                   ? "bg-[#1D9E75] text-white shadow-lg shadow-emerald-100" 
                   : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
@@ -70,9 +69,15 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         </nav>
 
         <div className="p-4 border-t border-gray-50 mt-auto">
+           <div className="bg-gray-50 rounded-2xl p-4 mb-4">
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Support</p>
+              <NavLink to="/patient/help" className="flex items-center gap-2 text-sm font-bold text-gray-600 hover:text-gray-900">
+                <HelpCircle size={18} /> Aide & Support
+              </NavLink>
+           </div>
           <button
             onClick={handleLogout}
-            className="flex w-full items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-colors font-bold text-sm"
+            className="flex w-full items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-2xl transition-colors font-bold text-sm"
           >
             <LogOut size={20} />
             <span>Déconnexion</span>
@@ -88,7 +93,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             <Search size={18} className="text-gray-400" />
             <input 
               type="text" 
-              placeholder="Rechercher..." 
+              placeholder="Rechercher un médecin, une analyse..." 
               className="bg-transparent border-none text-sm focus:ring-0 w-full text-gray-700 font-medium"
             />
           </div>
@@ -106,11 +111,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
             <div className="flex items-center gap-3 group cursor-pointer">
               <div className="text-right hidden sm:block">
-                <p className="text-sm font-black text-gray-900">Admin User</p>
-                <p className="text-[10px] font-bold text-[#1D9E75] uppercase tracking-widest">Administrateur</p>
+                <p className="text-sm font-black text-gray-900">{user?.name || 'Patient User'}</p>
+                <p className="text-[10px] font-bold text-[#1D9E75] uppercase tracking-widest">Patient</p>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-[#E8F7F1] flex items-center justify-center text-[#1D9E75] font-black shadow-sm transition-transform group-hover:scale-105 border-2 border-white">
-                A
+                {user?.name?.charAt(0) || 'P'}
               </div>
               <ChevronDown size={14} className="text-gray-400" />
             </div>

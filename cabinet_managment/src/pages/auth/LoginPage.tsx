@@ -1,4 +1,4 @@
-import { ArrowRight, Building2, Hospital, Lock, Mail, UserPlus } from 'lucide-react'
+import { ArrowRight, Building2, Hospital, Lock, Mail, UserPlus, User } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router-dom'
@@ -86,6 +86,15 @@ export function LoginPage() {
         </div>
         <p className="mb-3 text-center text-xs text-gray-500 dark:text-slate-500">Don&apos;t have an account? Register as</p>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Link to="/register/patient" className={cn(roleTileClass, 'bg-emerald-50 hover:border-emerald-500/25')}>
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-emerald-500/20 bg-white/90">
+              <User className="h-5 w-5 text-emerald-600" aria-hidden />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-gray-900 dark:text-slate-100">Patient</p>
+              <p className="text-xs text-gray-600 dark:text-slate-400">Book appointments</p>
+            </div>
+          </Link>
           <Link to={ROUTES.REGISTER_DOCTOR} className={cn(roleTileClass, 'bg-[#E6F1FB] hover:border-[#185FA5]/25')}>
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#185FA5]/20 bg-white/90">
               <UserPlus className="h-5 w-5 text-[#0C447C]" aria-hidden />

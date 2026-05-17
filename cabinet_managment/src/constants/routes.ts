@@ -1,4 +1,5 @@
 export const ROUTES = {
+  LANDING: '/',
   LOGIN: '/login',
   FORGOT_PASSWORD: '/forgot-password',
   RESET_PASSWORD: '/reset-password',
@@ -34,6 +35,12 @@ export const ROUTES = {
   ADMIN_DASHBOARD: '/admin/dashboard',
   ADMIN_USERS: '/admin/users',
   ADMIN_WALLET: '/admin/wallet',
+  PATIENT_DASHBOARD: '/patient/dashboard',
+  PATIENT_APPOINTMENTS: '/patient/appointments',
+  PATIENT_FAVORITES: '/patient/favorites',
+  PATIENT_RECORDS: '/patient/medical-records',
+  PATIENT_NOTIFICATIONS: '/patient/notifications',
+  PATIENT_PROFILE: '/patient/profile',
 } as const
 
 export const ROLE_HOME: Record<string, string> = {
@@ -42,6 +49,7 @@ export const ROLE_HOME: Record<string, string> = {
   collective_cabinet: ROUTES.CABINET_DASHBOARD,
   admin: ROUTES.ADMIN_DASHBOARD,
   secretary: ROUTES.SECRETARY_APPOINTMENTS,
+  patient: ROUTES.PATIENT_DASHBOARD,
 }
 
 export const PENDING_ROUTE: Record<string, string> = {
