@@ -35,6 +35,7 @@ class _FavoriteDoctorsPageState extends State<FavoriteDoctorsPage> {
 
     try {
       final response = await _apiClient.get('/favorites');
+      if (!mounted) return;
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body)['data'];
         setState(() {
@@ -48,6 +49,7 @@ class _FavoriteDoctorsPageState extends State<FavoriteDoctorsPage> {
         });
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = 'Connection error';
         _loading = false;
@@ -62,6 +64,7 @@ class _FavoriteDoctorsPageState extends State<FavoriteDoctorsPage> {
         body: {'doctor_id': doctor.id},
       );
 
+      if (!mounted) return;
       if (response.statusCode == 200) {
         // Remove from list locally for instant feedback
         setState(() {
@@ -183,14 +186,7 @@ class _FavoriteDoctorsPageState extends State<FavoriteDoctorsPage> {
                     doctor.specialty,
                     style: const TextStyle(color: AppColors.primary, fontSize: 13),
                   ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(Icons.star, color: AppColors.star, size: 14),
-                      const SizedBox(width: 4),
-                      Text(doctor.rating, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
+
                 ],
               ),
             ),

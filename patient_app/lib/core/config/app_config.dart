@@ -3,6 +3,6 @@ class AppConfig {
   // flutter run --dart-define=API_BASE_URL=http://192.168.1.X:8000/api
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://192.168.1.15:8000/api',
+    defaultValue: 'http://192.168.1.51:8000/api',
   );
 }

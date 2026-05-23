@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/utils/colors.dart';
 import '../../../home/domain/entities/doctor.dart';
 import '../../../appointments/presentation/pages/book_appointment_page.dart';
@@ -31,6 +32,32 @@ class _DoctorDetailsPageState extends State<DoctorDetailsPage> {
     _loadTodaySchedule();
   }
 
+  Future<void> _openMapDirections() async {
+    final lat = widget.doctor.latitude;
+    final lng = widget.doctor.longitude;
+    if (lat.isEmpty || lng.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cabinet location coordinates are not set.')),
+      );
+      return;
+    }
+
+    final googleMapsUrl = Uri.parse('https://www.google.com/maps/dir/?api=1&destination=$lat,$lng');
+    final appleMapsUrl = Uri.parse('maps://?daddr=$lat,$lng');
+
+    try {
+      if (await canLaunchUrl(googleMapsUrl)) {
+        await launchUrl(googleMapsUrl, mode: LaunchMode.externalApplication);
+      } else if (await canLaunchUrl(appleMapsUrl)) {
+        await launchUrl(appleMapsUrl, mode: LaunchMode.externalApplication);
+      } else {
+        await launchUrl(googleMapsUrl, mode: LaunchMode.platformDefault);
+      }
+    } catch (e) {
+      await launchUrl(googleMapsUrl, mode: LaunchMode.platformDefault);
+    }
+  }
+
   Future<void> _toggleFavorite() async {
     final oldStatus = _isFavorite;
     setState(() => _isFavorite = !oldStatus);
@@ -42,10 +69,12 @@ class _DoctorDetailsPageState extends State<DoctorDetailsPage> {
         body: {'doctor_id': widget.doctor.id},
       );
 
+      if (!mounted) return;
       if (response.statusCode != 200) {
         setState(() => _isFavorite = oldStatus);
       }
     } catch (_) {
+      if (!mounted) return;
       setState(() => _isFavorite = oldStatus);
     }
   }
@@ -68,6 +97,7 @@ class _DoctorDetailsPageState extends State<DoctorDetailsPage> {
         '/appointments/slots/${widget.doctor.id}/$today/$cabinetType/$cabinetId',
       );
 
+      if (!mounted) return;
       if (response.statusCode == 200) {
         final Map<String, dynamic> decoded =
             json.decode(response.body) as Map<String, dynamic>;
@@ -91,6 +121,7 @@ class _DoctorDetailsPageState extends State<DoctorDetailsPage> {
         });
       }
     } catch (_) {
+      if (!mounted) return;
       setState(() {
         _scheduleError = 'Unable to load today schedule';
         _loadingSchedule = false;
@@ -134,7 +165,8 @@ class _DoctorDetailsPageState extends State<DoctorDetailsPage> {
                 _buildProfileCard(),
                 _buildAboutSection(),
                 _buildScheduleSection(),
-                const SizedBox(height: 120), // Space for bottom bar
+                _buildLocationSection(),
+                const SizedBox(height: 140), // Space for bottom bar
               ],
             ),
             ),
@@ -238,22 +270,7 @@ class _DoctorDetailsPageState extends State<DoctorDetailsPage> {
                 color: AppColors.textSecondary,
               ),
             ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.star_rounded, color: AppColors.star, size: 20),
-                const SizedBox(width: 4),
-                Text(
-                  '${widget.doctor.rating} (${widget.doctor.reviews} reviews)',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -492,6 +509,116 @@ class _DoctorDetailsPageState extends State<DoctorDetailsPage> {
         border: Border.all(color: Colors.grey.shade200),
       ),
       child: Icon(icon, color: AppColors.primary, size: 22),
+    );
+  }
+
+  Widget _buildLocationSection() {
+    final lat = widget.doctor.latitude;
+    final lng = widget.doctor.longitude;
+    
+    // Default to Algiers if coordinates are empty
+    final displayLat = lat.isNotEmpty ? lat : '36.7538';
+    final displayLng = lng.isNotEmpty ? lng : '3.0588';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Cabinet Location',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            widget.doctor.address,
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 16),
+          GestureDetector(
+            onTap: _openMapDirections,
+            child: Container(
+              height: 160,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Stack(
+                  children: [
+                    CachedNetworkImage(
+                      imageUrl: 'https://static-maps.yandex.ru/1.x/?ll=$displayLng,$displayLat&z=15&l=map&size=450,160&pt=$displayLng,$displayLat,pm2rdm',
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: double.infinity,
+                      placeholder: (context, url) => Container(
+                        color: Colors.grey.shade100,
+                        child: const Center(
+                          child: CircularProgressIndicator(color: AppColors.primary),
+                        ),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        color: Colors.grey.shade100,
+                        child: const Center(
+                          child: Icon(Icons.map_outlined, size: 40, color: AppColors.textSecondary),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 12,
+                      right: 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(Icons.directions, color: Colors.white, size: 18),
+                            SizedBox(width: 6),
+                            Text(
+                              'Get Directions',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

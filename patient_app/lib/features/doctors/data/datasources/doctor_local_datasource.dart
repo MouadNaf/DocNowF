@@ -42,6 +42,8 @@ class DoctorLocalDataSourceImpl implements DoctorLocalDataSource {
           cabinetId: '1',
           cabinetType: 'private',
           schedule: ['09:00 AM', '10:00 AM'],
+          latitude: '36.7550',
+          longitude: '3.0550',
         ),
         const Doctor(
           id: '2',
@@ -68,6 +70,8 @@ class DoctorLocalDataSourceImpl implements DoctorLocalDataSource {
           cabinetId: '2',
           cabinetType: 'private',
           schedule: ['10:00 AM', '02:00 PM'],
+          latitude: '36.7520',
+          longitude: '3.0600',
         ),
       ];
     }

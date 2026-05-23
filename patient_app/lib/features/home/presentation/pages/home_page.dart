@@ -491,21 +491,6 @@ class _HomePageState extends State<HomePage> {
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      const Icon(
-                        Icons.star_rounded,
-                        color: AppColors.star,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 3),
-                      Text(
-                        '${doctor.rating} (${doctor.reviews})',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(width: 14),
                       Icon(
                         Icons.location_on_outlined,
                         color: AppColors.textSecondary,

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DoctorLayout } from '@/widgets/layout/DoctorLayout';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -11,11 +11,14 @@ import { z } from 'zod';
 import { WILAYAS } from '@/constants/algeria';
 import { doctorService } from '@/services/doctor.service';
 import { cn } from '@/lib/utils/cn';
+import { LocationPicker } from '@/components/ui/LocationPicker';
 
 const cabinetSchema = z.object({
   name: z.string().min(3, 'Cabinet name must be at least 3 characters'),
   city: z.string().min(1, 'Please select a city'),
   address: z.string().min(5, 'Address must be at least 5 characters'),
+  latitude: z.number().nullable().optional(),
+  longitude: z.number().nullable().optional(),
   bio: z.string().min(10, 'Bio must be at least 10 characters'),
   consultation_price: z.string().min(1, 'Price is required'),
   follow_up_price: z.string().min(1, 'Follow-up price is required'),
@@ -33,9 +36,12 @@ export function DoctorSettingsPage() {
 
   const hasCabinet = user?.doctorType === 'private_cabinet';
 
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<CabinetFormValues>({
+  const { register, handleSubmit, reset, setValue, watch, formState: { errors, isSubmitting } } = useForm<CabinetFormValues>({
     resolver: zodResolver(cabinetSchema),
   });
+
+  const watchLatitude = watch('latitude');
+  const watchLongitude = watch('longitude');
 
   useEffect(() => {
     const fetchCabinet = async () => {
@@ -51,6 +57,8 @@ export function DoctorSettingsPage() {
             name: res.cabinet.name,
             city: res.cabinet.city,
             address: res.cabinet.address,
+            latitude: res.cabinet.latitude ? Number(res.cabinet.latitude) : 36.7538,
+            longitude: res.cabinet.longitude ? Number(res.cabinet.longitude) : 3.0588,
             bio: res.cabinet.bio || '',
             consultation_price: String(res.cabinet.consultation_price),
             follow_up_price: String(res.cabinet.follow_up_price || ''),
@@ -127,8 +135,19 @@ export function DoctorSettingsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <Input label="Nom du cabinet" icon={<Building2 size={18} />} error={errors.name?.message} {...register('name')} />
                 <Select label="Wilaya" options={WILAYAS.map(w => ({ value: w.name, label: w.name }))} error={errors.city?.message} {...register('city')} />
-                <div className="md:col-span-2">
+                <div className="md:col-span-2 col-span-1">
                   <Input label="Adresse exacte" icon={<MapPin size={18} />} error={errors.address?.message} {...register('address')} />
+                </div>
+                <div className="md:col-span-2 col-span-1 space-y-2 mt-2">
+                  <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest ml-1">Position sur la carte (OpenStreetMap)</label>
+                  <LocationPicker 
+                    latitude={watchLatitude} 
+                    longitude={watchLongitude} 
+                    onChange={(lat, lng) => {
+                      setValue('latitude', lat);
+                      setValue('longitude', lng);
+                    }} 
+                  />
                 </div>
               </div>
             </div>

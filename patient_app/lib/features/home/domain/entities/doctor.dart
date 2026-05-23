@@ -26,6 +26,8 @@ class Doctor extends Equatable {
   final String cabinetType;
   final List<String> schedule;
   final bool isFavorite;
+  final String latitude;
+  final String longitude;
 
   const Doctor({
     required this.id,
@@ -52,6 +54,8 @@ class Doctor extends Equatable {
     required this.cabinetId,
     required this.cabinetType,
     required this.schedule,
+    required this.latitude,
+    required this.longitude,
     this.isFavorite = false,
   });
 
@@ -60,7 +64,7 @@ class Doctor extends Equatable {
         id, userId, name, email, specialty, gender, city, address, dob,
         phoneNumber, profilePicture, isVerified, isActive, rating, reviews,
         distance, experience, patients, fee, about, hospital, cabinetId, cabinetType, schedule,
-        isFavorite,
+        isFavorite, latitude, longitude,
       ];
 
   Doctor copyWith({bool? isFavorite}) {
@@ -89,6 +93,8 @@ class Doctor extends Equatable {
       cabinetId: cabinetId,
       cabinetType: cabinetType,
       schedule: schedule,
+      latitude: latitude,
+      longitude: longitude,
       isFavorite: isFavorite ?? this.isFavorite,
     );
   }

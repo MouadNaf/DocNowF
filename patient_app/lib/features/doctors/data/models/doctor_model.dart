@@ -26,6 +26,8 @@ class DoctorModel extends Doctor {
     required super.cabinetId,
     required super.cabinetType,
     required super.schedule,
+    required super.latitude,
+    required super.longitude,
     super.isFavorite,
   });
 
@@ -57,6 +59,8 @@ class DoctorModel extends Doctor {
       cabinetId: json['cabinet_id']?.toString() ?? '',
       cabinetType: json['cabinet_type']?.toString() ?? '',
       schedule: (json['schedule'] as List?)?.map((e) => e.toString()).toList() ?? [],
+      latitude: json['latitude']?.toString() ?? '',
+      longitude: json['longitude']?.toString() ?? '',
       isFavorite: json['is_favorite'] == true || json['is_favorite'] == 1,
     );
   }

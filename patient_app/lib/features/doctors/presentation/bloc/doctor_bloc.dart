@@ -93,6 +93,8 @@ class DoctorBloc extends Bloc<DoctorEvent, DoctorState> {
       cabinetType: 'private',
       schedule: const ['09:00 AM', '10:00 AM', '11:00 AM'],
       about: '',
+      latitude: '36.7538',
+      longitude: '3.0588',
     );
 
     emit(DoctorDetailsLoaded(mockDoctor));

@@ -52,6 +52,8 @@ class FavoriteController extends Controller
                     'hospital' => $doctor->privateCabinet->name,
                     'cabinet_id' => (string) $doctor->privateCabinet->id,
                     'cabinet_type' => 'private',
+                    'latitude' => $doctor->privateCabinet->latitude,
+                    'longitude' => $doctor->privateCabinet->longitude,
                     'is_verified' => (bool) $doctor->is_verified,
                     'is_active' => (bool) $doctor->is_active,
                     'is_favorite' => true,

@@ -20,7 +20,7 @@ class AllDoctorsPage extends StatefulWidget {
 
 class _AllDoctorsPageState extends State<AllDoctorsPage> {
   late final DoctorBloc _doctorBloc;
-  String _selectedSort = 'Highest Rating';
+  String _selectedSort = 'Nearest';
   String _selectedAvailability = 'Available Today';
   String _selectedPriceRange = '';
   String _selectedDistance = '';
@@ -184,8 +184,6 @@ class _AllDoctorsPageState extends State<AllDoctorsPage> {
                         ),
                         items:
                             [
-                                  'Highest Rating',
-                                  'Lowest Rating',
                                   'Nearest',
                                   'Price: Low to High',
                                 ]
@@ -511,21 +509,6 @@ class _AllDoctorsPageState extends State<AllDoctorsPage> {
                   Row(
                     children: [
                       const Icon(
-                        Icons.star_rounded,
-                        color: AppColors.star,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${doctor.rating} (${doctor.reviews})',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      const Icon(
                         Icons.location_on_outlined,
                         color: AppColors.textSecondary,
                         size: 14,
@@ -665,35 +648,13 @@ class _AllDoctorsPageState extends State<AllDoctorsPage> {
               ),
             ),
             const Spacer(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.star_rounded,
-                      color: AppColors.star,
-                      size: 14,
-                    ),
-                    const SizedBox(width: 2),
-                    Text(
-                      doctor.rating,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-                Text(
-                  doctor.fee,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                    color: AppColors.primary,
-                  ),
-                ),
-              ],
+            Text(
+              doctor.fee,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+                color: AppColors.primary,
+              ),
             ),
           ],
         ),

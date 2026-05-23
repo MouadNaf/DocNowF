@@ -33,6 +33,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       cabinetId: '4',
       cabinetType: 'private',
       schedule: ['09:00 AM', '10:00 AM', '11:00 AM', '02:00 PM', '03:00 PM'],
+      latitude: '36.7538',
+      longitude: '3.0588',
     ),
     const Doctor(
       id: '2',
@@ -60,6 +62,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       cabinetId: '5',
       cabinetType: 'private',
       schedule: ['10:00 AM', '11:30 AM', '02:30 PM', '04:00 PM'],
+      latitude: '36.7520',
+      longitude: '3.0600',
     ),
     const Doctor(
       id: '3',
@@ -87,6 +91,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       cabinetId: '6',
       cabinetType: 'private',
       schedule: ['09:00 AM', '10:00 AM', '11:00 AM', '02:00 PM', '03:00 PM'],
+      latitude: '36.7550',
+      longitude: '3.0550',
     ),
     const Doctor(
       id: '4',
@@ -102,6 +108,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       profilePicture: 'https://i.pravatar.cc/150?img=12',
       isVerified: true,
       isActive: true, rating: '', reviews: '', distance: '', experience: '', patients: '', fee: '', about: '', hospital: '', cabinetId: '', cabinetType: 'private', schedule: [],
+      latitude: '36.7540',
+      longitude: '3.0590',
     ),
   ];
 

@@ -14,11 +14,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { WILAYAS } from '@/constants/algeria';
 import { doctorService } from '@/services/doctor.service';
+import { LocationPicker } from '@/components/ui/LocationPicker';
 
 const cabinetSchema = z.object({
   name: z.string().min(3, 'Cabinet name must be at least 3 characters'),
   city: z.string().min(1, 'Please select a city'),
   address: z.string().min(5, 'Address must be at least 5 characters'),
+  latitude: z.number().nullable().optional(),
+  longitude: z.number().nullable().optional(),
   bio: z.string().min(10, 'Bio must be at least 10 characters'),
   consultation_price: z.string().min(1, 'Price is required'),
   follow_up_price: z.string().min(1, 'Follow-up price is required'),
@@ -38,12 +41,17 @@ export function DoctorDashboardPage() {
 
     const hasCabinet = user?.doctorType === 'private_cabinet';
 
-    const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<CabinetFormValues>({
+    const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm<CabinetFormValues>({
         resolver: zodResolver(cabinetSchema),
         defaultValues: {
             slot_duration: '30',
+            latitude: 36.7538,
+            longitude: 3.0588,
         }
     });
+
+    const watchLatitude = watch('latitude');
+    const watchLongitude = watch('longitude');
 
     useEffect(() => {
         const checkCabinet = async () => {
@@ -231,6 +239,22 @@ export function DoctorDashboardPage() {
                                             {errors.bio && <p className="text-xs text-red-500">{errors.bio.message}</p>}
                                         </div>
                                     </div>
+                                </div>
+
+                                {/* Geographic Location Selection */}
+                                <div className="space-y-4 pt-6 border-t border-gray-50">
+                                    <div>
+                                        <h3 className="text-sm font-bold text-gray-700 uppercase">Localisation sur la carte</h3>
+                                        <p className="text-xs text-gray-500 dark:text-slate-500 mt-0.5">Choisissez l'emplacement géographique exact de votre cabinet sur la carte.</p>
+                                    </div>
+                                    <LocationPicker 
+                                        latitude={watchLatitude} 
+                                        longitude={watchLongitude} 
+                                        onChange={(lat, lng) => {
+                                            setValue('latitude', lat);
+                                            setValue('longitude', lng);
+                                        }} 
+                                    />
                                 </div>
 
                                 <div className="flex gap-4 pt-4 border-t border-gray-50">

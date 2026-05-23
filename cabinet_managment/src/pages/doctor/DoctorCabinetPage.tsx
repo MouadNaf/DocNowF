@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { DoctorLayout } from '@/widgets/layout/DoctorLayout';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -13,11 +13,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { WILAYAS } from '@/constants/algeria';
 import { doctorService } from '@/services/doctor.service';
+import { LocationPicker } from '@/components/ui/LocationPicker';
 
 const cabinetSchema = z.object({
   name: z.string().min(3, 'Cabinet name must be at least 3 characters'),
   city: z.string().min(1, 'Please select a city'),
   address: z.string().min(5, 'Address must be at least 5 characters'),
+  latitude: z.number().nullable().optional(),
+  longitude: z.number().nullable().optional(),
   bio: z.string().min(10, 'Bio must be at least 10 characters'),
   consultation_price: z.string().min(1, 'Price is required'),
   follow_up_price: z.string().min(1, 'Follow-up price is required'),
@@ -36,12 +39,17 @@ export function DoctorCabinetPage() {
   const hasCabinet = user?.doctorType === 'private_cabinet';
   const isPremium = user?.isPremium;
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<CabinetFormValues>({
+  const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm<CabinetFormValues>({
     resolver: zodResolver(cabinetSchema),
     defaultValues: {
       slot_duration: '30',
+      latitude: 36.7538,
+      longitude: 3.0588,
     }
   });
+
+  const watchLatitude = watch('latitude');
+  const watchLongitude = watch('longitude');
 
   const onSubmit = async (data: CabinetFormValues) => {
     try {
@@ -160,7 +168,7 @@ export function DoctorCabinetPage() {
                     <Input label="Prix Consultation" type="number" icon={<DollarSign size={18} />} error={errors.consultation_price?.message} {...register('consultation_price')} />
                     <Input label="Prix Suivi" type="number" icon={<DollarSign size={18} />} error={errors.follow_up_price?.message} {...register('follow_up_price')} />
                   </div>
-                  <Input label="DurÃ©e CrÃ©neau (Min)" type="number" icon={<Clock size={18} />} error={errors.slot_duration?.message} {...register('slot_duration')} />
+                  <Input label="Durée Créneau (Min)" type="number" icon={<Clock size={18} />} error={errors.slot_duration?.message} {...register('slot_duration')} />
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-gray-700 uppercase ml-1">Bio / Description</label>
                     <textarea 
@@ -172,9 +180,25 @@ export function DoctorCabinetPage() {
                 </div>
               </div>
 
+              {/* Geographic Location Selection */}
+              <div className="space-y-4 pt-6 border-t border-gray-50">
+                <div>
+                  <h3 className="text-sm font-bold text-gray-700 uppercase ml-1">Localisation sur la carte</h3>
+                  <p className="text-xs text-gray-500 dark:text-slate-500 ml-1 mt-0.5">Indiquez la position géographique exacte de votre cabinet pour aider les patients à vous trouver.</p>
+                </div>
+                <LocationPicker 
+                  latitude={watchLatitude} 
+                  longitude={watchLongitude} 
+                  onChange={(lat, lng) => {
+                    setValue('latitude', lat);
+                    setValue('longitude', lng);
+                  }} 
+                />
+              </div>
+
               <div className="pt-10 border-t border-gray-50">
                 <Button type="submit" fullWidth className="rounded-xl h-12 text-base font-semibold shadow-md shadow-emerald-100" loading={isSubmitting}>
-                  Finaliser la crÃ©ation
+                  Finaliser la création
                 </Button>
               </div>
             </form>
