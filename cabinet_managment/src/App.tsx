@@ -47,6 +47,8 @@ import { PatientAppointmentsPage } from '@/pages/patient/PatientAppointmentsPage
 import { usePreferencesStore } from '@/store/preferences.store'
 import { t } from '@/lib/i18n'
 
+import { NotificationsPage } from '@/pages/notifications/NotificationsPage'
+
 const ComingSoon = ({ label }: { label: string }) => {
   const language = usePreferencesStore((s) => s.language)
   return <div className="p-8">{label} - {language === 'ar' ? 'قريبا' : language === 'fr' ? 'bientot' : 'coming soon'}</div>
@@ -77,6 +79,9 @@ export default function App() {
         <Route path={ROUTES.FORGOT_PASSWORD} element={<GuestRoute><ForgotPasswordPage /></GuestRoute>} />
         <Route path={ROUTES.RESET_PASSWORD} element={<GuestRoute><ResetPasswordPage /></GuestRoute>} />
         <Route path={ROUTES.PENDING} element={<PendingPage />} />
+
+        {/* Global Protected Routes */}
+        <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
 
         {/* Doctor Routes (Reused Existing) */}
         <Route path={ROUTES.DOCTOR_DASHBOARD} element={<ProtectedRoute><DoctorDashboardPage /></ProtectedRoute>} />

@@ -9,7 +9,8 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
   late Animation<double> _opacityAnimation;
@@ -20,19 +21,26 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 1800),
     );
 
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+    _scaleAnimation = Tween<double>(begin: 0.7, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
     );
 
     _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.5, curve: Curves.easeIn)),
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 0.5, curve: Curves.easeIn),
+      ),
     );
 
-    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.4, 1.0, curve: Curves.easeOutCubic)),
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.25), end: Offset.zero).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.4, 1.0, curve: Curves.easeOutCubic),
+      ),
     );
 
     _controller.forward();
@@ -46,12 +54,13 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   }
 
   _navigateToLogin() async {
-    await Future.delayed(const Duration(seconds: 4));
+    await Future.delayed(const Duration(seconds: 3));
     if (!mounted) return;
     Navigator.pushReplacement(
       context,
       PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => const LoginPage(),
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const LoginPage(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(opacity: animation, child: child);
         },
@@ -65,50 +74,90 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     return Scaffold(
       backgroundColor: AppColors.primary,
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
             colors: [
-              AppColors.primary,
-              AppColors.primary.withOpacity(0.8),
+              Color(0xFF2EAA8A),
+              Color(0xFF1E8A6E),
+              Color(0xFF16705A),
             ],
           ),
         ),
         child: Stack(
           children: [
+            // Decorative circles
+            Positioned(
+              top: -80,
+              right: -60,
+              child: Container(
+                width: 260,
+                height: 260,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.08),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 80,
+              right: 40,
+              child: Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.06),
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: -100,
+              left: -70,
+              child: Container(
+                width: 300,
+                height: 300,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.07),
+                ),
+              ),
+            ),
+            // Main content
             Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Animated Logo
+                  // Logo container
                   ScaleTransition(
                     scale: _scaleAnimation,
                     child: FadeTransition(
                       opacity: _opacityAnimation,
                       child: Container(
-                        padding: const EdgeInsets.all(24),
+                        width: 110,
+                        height: 110,
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(35),
+                          borderRadius: BorderRadius.circular(32),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 20,
-                              offset: const Offset(0, 10),
+                              color: Colors.black.withOpacity(0.15),
+                              blurRadius: 30,
+                              offset: const Offset(0, 12),
                             ),
                           ],
                         ),
                         child: const Icon(
-                          Icons.favorite,
+                          Icons.medical_services_rounded,
                           color: Colors.white,
-                          size: 90,
+                          size: 56,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 32),
-                  // Animated Text
+                  const SizedBox(height: 36),
+                  // App name & tagline
                   FadeTransition(
                     opacity: _opacityAnimation,
                     child: SlideTransition(
@@ -116,21 +165,22 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                       child: Column(
                         children: [
                           const Text(
-                            'HealthCare',
+                            'DocNow',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 42,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.5,
+                              fontSize: 44,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.5,
                             ),
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            'Your wellness journey starts here',
+                            'Your health, our priority',
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.9),
-                              fontSize: 18,
+                              color: Colors.white.withOpacity(0.80),
+                              fontSize: 17,
                               fontWeight: FontWeight.w400,
+                              letterSpacing: 0.3,
                             ),
                           ),
                         ],
@@ -140,7 +190,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                 ],
               ),
             ),
-            // Animated Bottom Dots
+            // Bottom loading dots
             Positioned(
               bottom: 60,
               left: 0,
@@ -153,10 +203,10 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                     3,
                     (index) => Container(
                       margin: const EdgeInsets.symmetric(horizontal: 5),
-                      width: index == 0 ? 24 : 8,
+                      width: index == 0 ? 28 : 8,
                       height: 8,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(index == 0 ? 1 : 0.4),
+                        color: Colors.white.withOpacity(index == 0 ? 1.0 : 0.35),
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),

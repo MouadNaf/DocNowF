@@ -1,4 +1,5 @@
-import { Bell, Languages, LogOut, Moon, Sun, UserPlus } from 'lucide-react'
+import { Languages, LogOut, Moon, Sun, UserPlus } from 'lucide-react'
+import { NotificationBell } from '../notifications/NotificationBell'
 import { useNavigate } from 'react-router-dom'
 import { ROUTES } from '@/constants/routes'
 import { usePreferencesStore } from '@/store/preferences.store'
@@ -44,10 +45,9 @@ export function SecretaryTopbar({ title }: { title: string }) {
         >
           <UserPlus size={16} /> {t(language, 'walkIn')}
         </button>
-        <button className="size-10 border rounded-lg flex items-center justify-center relative dark:border-slate-600 dark:text-slate-200">
-          <Bell size={16} />
-          <span className="absolute -top-1 -right-1 size-4 text-[10px] rounded-full bg-red-500 text-white flex items-center justify-center">3</span>
-        </button>
+        <div className="flex items-center justify-center dark:text-slate-200">
+          <NotificationBell size={20} />
+        </div>
       </div>
     </header>
   )

@@ -12,7 +12,9 @@ import '../bloc/home_state.dart';
 import '../../../search/presentation/pages/search_page.dart';
 import '../../../doctors/presentation/pages/all_doctors_page.dart';
 import '../../../doctors/presentation/pages/doctor_details_page.dart';
-import '../../../doctors/presentation/pages/favorite_doctors_page.dart';
+import '../../../notifications/presentation/bloc/notification_bloc.dart';
+import '../../../notifications/presentation/bloc/notification_state.dart';
+import '../../../notifications/presentation/pages/notifications_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -148,26 +150,67 @@ class _HomePageState extends State<HomePage> {
             ),
           ],
         ),
-        GestureDetector(
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const FavoriteDoctorsPage()),
-          ),
-          child: Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+        // Notification Bell
+        BlocBuilder<NotificationBloc, NotificationState>(
+          builder: (context, notifState) {
+            final unread = notifState.unreadCount;
+            return GestureDetector(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const NotificationsPage()),
+              ),
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: const Icon(Icons.favorite, color: Colors.red, size: 24),
-          ),
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    const Icon(
+                      Icons.notifications_rounded,
+                      color: AppColors.primary,
+                      size: 24,
+                    ),
+                    if (unread > 0)
+                      Positioned(
+                        top: -4,
+                        right: -4,
+                        child: Container(
+                          padding: const EdgeInsets.all(3),
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 16,
+                            minHeight: 16,
+                          ),
+                          child: Text(
+                            unread > 9 ? '9+' : '$unread',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          },
         ),
       ],
     );

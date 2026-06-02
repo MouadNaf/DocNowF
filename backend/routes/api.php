@@ -239,5 +239,13 @@ Route::middleware('auth:sanctum')->group(function () {
     // ── Favorites ───────────────────────────────────────────────
     Route::get('/favorites', [FavoriteController::class, 'index']);
     Route::post('/favorites/toggle', [FavoriteController::class, 'toggle']);
+    // ── Notifications ───────────────────────────────────────────
+    Route::prefix('notifications')->group(function () {
+        Route::get('/', [\App\Http\Controllers\NotificationController::class, 'index']);
+        Route::get('/unread-count', [\App\Http\Controllers\NotificationController::class, 'unreadCount']);
+        Route::put('/read-all', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead']);
+        Route::put('/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead']);
+        Route::delete('/{id}', [\App\Http\Controllers\NotificationController::class, 'destroy']);
+    });
     // ────────────────────────────────────────────────────────────
 });

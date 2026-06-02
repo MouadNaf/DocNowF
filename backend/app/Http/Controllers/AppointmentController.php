@@ -7,6 +7,7 @@ use App\Models\Appointment;
 use App\Models\DoctorAvailability;
 use App\Models\DoctorUnavailability;
 use App\Models\PrivateCabinet;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -318,6 +319,9 @@ $slots = array_values($slots);
                 'consultation_fee' => $fee,
             ]);
 
+            // 🔔 Notify doctor, secretary, and patient
+            NotificationService::appointmentBooked($cancelledAppointment);
+
         return response()->json([
             'success' => true,
             'message' => 'Appointment reused successfully',
@@ -350,6 +354,9 @@ $slots = array_values($slots);
             'message' => 'This slot is already booked (race condition)'
         ], 400);
     }
+
+    // 🔔 Notify doctor, secretary, and patient
+    NotificationService::appointmentBooked($appointment);
 
     return response()->json([
         'success' => true,
@@ -404,6 +411,9 @@ public function cancel(Request $request, $appointmentId)
         'cancellation_reason' => $request->reason,
         'cancelled_at' => now(),
     ]);
+
+    // 🔔 Notify doctor, secretary, and patient
+    NotificationService::appointmentCancelled($appointment, $request->reason ?? '');
 
     return response()->json([
         'success' => true,

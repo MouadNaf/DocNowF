@@ -1,4 +1,5 @@
-import { Bell, Languages, Moon, Sun } from 'lucide-react';
+import { Languages, Moon, Sun } from 'lucide-react';
+import { NotificationBell } from '../notifications/NotificationBell';
 import { usePreferencesStore } from '@/store/preferences.store'
 import { useAuthStore } from '@/store/auth.store'
 import { useNavigate } from 'react-router-dom'
@@ -43,8 +44,7 @@ export function TopNav() {
           {language === 'fr' ? 'FR' : language === 'en' ? 'EN' : 'AR'}
         </button>
         <div className="relative cursor-pointer text-gray-500 hover:text-gray-700 transition dark:text-slate-300">
-          <Bell size={20} />
-          <span className="absolute -top-1 -right-1 block h-3 w-3 rounded-full bg-red-500 border-2 border-white dark:border-slate-900"></span>
+          <NotificationBell size={20} />
         </div>
 
         {user?.role === 'doctor' && (

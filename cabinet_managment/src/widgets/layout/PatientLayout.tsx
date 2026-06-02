@@ -10,11 +10,11 @@ import {
   Settings, 
   HelpCircle,
   LogOut,
-  Bell,
   Search,
   ChevronDown,
   User
 } from 'lucide-react';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { ROUTES } from '@/constants/routes';
 import { useAuthStore } from '@/store/auth.store';
 import { cn } from '@/lib/utils/cn';
@@ -100,10 +100,9 @@ export function PatientLayout({ children }: PatientLayoutProps) {
 
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-3 pr-6 border-r border-gray-100">
-              <button className="p-2.5 text-gray-400 hover:bg-gray-50 rounded-xl relative transition-colors border border-gray-100">
-                <Bell size={20} />
-                <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-              </button>
+              <div className="p-1 text-gray-400 hover:bg-gray-50 rounded-xl relative transition-colors border border-transparent hover:border-gray-100">
+                <NotificationBell size={20} />
+              </div>
               <button className="p-2.5 text-gray-400 hover:bg-gray-50 rounded-xl transition-colors border border-gray-100">
                 <Settings size={20} />
               </button>

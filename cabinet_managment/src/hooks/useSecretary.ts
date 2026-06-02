@@ -113,7 +113,10 @@ export function useCreateWalkIn() {
   return useMutation({
     mutationFn: (data: Omit<secretaryApi.WalkInPayload, 'doctor_id'>) =>
       secretaryApi.createWalkIn({ ...data, doctor_id: doctorId }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['secretary', 'today'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['secretary', 'today'] })
+      qc.invalidateQueries({ queryKey: ['notifications'] })
+    },
   })
 }
 
@@ -188,6 +191,7 @@ export function useScheduleTreatmentVisit() {
       qc.invalidateQueries({ queryKey: ['secretary', 'treatments'] })
       qc.invalidateQueries({ queryKey: ['secretary', 'treatment'] })
       qc.invalidateQueries({ queryKey: ['secretary', 'treatment-stats'] })
+      qc.invalidateQueries({ queryKey: ['notifications'] })
     },
   })
 }

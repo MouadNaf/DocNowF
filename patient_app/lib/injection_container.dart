@@ -20,6 +20,12 @@ import 'features/appointments/domain/usecases/get_patient_appointments.dart';
 import 'features/appointments/domain/usecases/cancel_appointment.dart';
 import 'features/appointments/presentation/bloc/patient_appointments_bloc.dart';
 
+import 'features/notifications/domain/repositories/notification_repository.dart';
+import 'features/notifications/data/repositories/notification_repository_impl.dart';
+import 'features/notifications/domain/usecases/get_notifications.dart';
+import 'features/notifications/domain/usecases/mark_notification_read.dart';
+import 'features/notifications/presentation/bloc/notification_bloc.dart';
+
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 
@@ -68,6 +74,7 @@ Future<void> init() async {
     networkInfo: sl(),
   ));
   sl.registerLazySingleton<AppointmentRepository>(() => AppointmentRepositoryImpl(apiClient: sl()));
+  sl.registerLazySingleton<NotificationRepository>(() => NotificationRepositoryImpl(apiClient: sl()));
   sl.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl(
     remoteDataSource: sl(),
     localDataSource: sl(),
@@ -80,6 +87,9 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetAvailableSlots(sl()));
   sl.registerLazySingleton(() => GetPatientAppointments(sl()));
   sl.registerLazySingleton(() => CancelAppointment(sl()));
+  sl.registerLazySingleton(() => GetNotifications(sl()));
+  sl.registerLazySingleton(() => MarkNotificationRead(sl()));
+  sl.registerLazySingleton(() => MarkAllNotificationsRead(sl()));
   sl.registerLazySingleton(() => LoginUseCase(sl()));
   sl.registerLazySingleton(() => RegisterUseCase(sl()));
   sl.registerLazySingleton(() => LogoutUseCase(sl()));
@@ -103,6 +113,12 @@ Future<void> init() async {
     loginUseCase: sl(),
     registerUseCase: sl(),
     logoutUseCase: sl(),
+  ));
+
+  sl.registerFactory(() => NotificationBloc(
+    getNotificationsUseCase: sl(),
+    markNotificationReadUseCase: sl(),
+    markAllNotificationsReadUseCase: sl(),
   ));
 
   // Chatbot

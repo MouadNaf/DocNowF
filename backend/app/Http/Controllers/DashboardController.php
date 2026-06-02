@@ -220,6 +220,8 @@ class DashboardController extends Controller
             'collective_cabinet_id' => $location['collective_cabinet_id'],
         ]);
 
+        \App\Services\NotificationService::appointmentBooked($appointment);
+
         return response()->json([
             'success' => true,
             'message' => 'Walk-in appointment created',

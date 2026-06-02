@@ -5,6 +5,8 @@ import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/auth/presentation/pages/splash_screen.dart';
 import 'features/home/presentation/bloc/home_bloc.dart';
 import 'features/search/presentation/bloc/search_bloc.dart';
+import 'features/notifications/presentation/bloc/notification_bloc.dart';
+import 'features/notifications/presentation/bloc/notification_event.dart';
 import 'injection_container.dart';
 
 void main() async {
@@ -23,6 +25,9 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (_) => sl<HomeBloc>()),
         BlocProvider(create: (_) => sl<SearchBloc>()),
         BlocProvider(create: (_) => sl<AuthBloc>()),
+        BlocProvider(
+          create: (_) => sl<NotificationBloc>()..add(const LoadNotificationsEvent()),
+        ),
       ],
       child: MaterialApp(
         title: 'HealthCare Patient App',
