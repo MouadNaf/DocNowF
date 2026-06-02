@@ -99,6 +99,14 @@ export function useSaveNote() {
 }
 
 // ─── Walk-in ──────────────────────────────────────────────────────────────────
+export function useWalkInSlots(date: string) {
+  return useQuery({
+    queryKey: ['secretary', 'walk-in-slots', date],
+    queryFn: () => secretaryApi.getWalkInSlots(date),
+    enabled: !!date,
+  })
+}
+
 export function useCreateWalkIn() {
   const qc = useQueryClient()
   const doctorId = useDoctorId()
@@ -130,5 +138,88 @@ export function useCreatePatient() {
   return useMutation({
     mutationFn: secretaryApi.createPatient,
     onSuccess: () => qc.invalidateQueries({ queryKey: ['secretary', 'patients'] }),
+  })
+}
+
+// ─── Treatments ───────────────────────────────────────────────────────────────
+export function useSecretaryTreatments(filters: {
+  search?: string
+  status?: string
+  page?: number
+  per_page?: number
+} = {}) {
+  return useQuery({
+    queryKey: ['secretary', 'treatments', filters],
+    queryFn: () => secretaryApi.getSecretaryTreatments(filters),
+  })
+}
+
+export function useSecretaryTreatment(id?: string) {
+  return useQuery({
+    queryKey: ['secretary', 'treatment', id],
+    queryFn: () => secretaryApi.getSecretaryTreatment(id!),
+    enabled: !!id,
+  })
+}
+
+export function useSecretaryTreatmentStats() {
+  return useQuery({
+    queryKey: ['secretary', 'treatment-stats'],
+    queryFn: () => secretaryApi.getSecretaryTreatmentStats(),
+  })
+}
+
+export function usePatientTreatments(patientId?: string) {
+  return useQuery({
+    queryKey: ['secretary', 'patient-treatments', patientId],
+    queryFn: () => secretaryApi.getPatientTreatments(patientId!),
+    enabled: !!patientId,
+  })
+}
+
+export function useScheduleTreatmentVisit() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ treatmentId, payload }: {
+      treatmentId: string
+      payload: { date: string; time: string; notes?: string; title?: string }
+    }) => secretaryApi.scheduleTreatmentVisit(treatmentId, payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['secretary', 'treatments'] })
+      qc.invalidateQueries({ queryKey: ['secretary', 'treatment'] })
+      qc.invalidateQueries({ queryKey: ['secretary', 'treatment-stats'] })
+    },
+  })
+}
+
+export function useRescheduleTreatmentVisit() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ treatmentId, stepId, payload }: {
+      treatmentId: string
+      stepId: string
+      payload: { date: string; time: string; notes?: string }
+    }) => secretaryApi.rescheduleTreatmentVisit(treatmentId, stepId, payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['secretary'] }),
+  })
+}
+
+export function useCancelTreatmentVisit() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ treatmentId, stepId }: { treatmentId: string; stepId: string }) =>
+      secretaryApi.cancelTreatmentVisit(treatmentId, stepId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['secretary'] }),
+  })
+}
+
+export function useRecordTreatmentPayment() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ treatmentId, payload }: {
+      treatmentId: string
+      payload: { amount: number; payment_method: 'cash' | 'card' | 'bank_transfer'; notes?: string }
+    }) => secretaryApi.recordTreatmentPayment(treatmentId, payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['secretary'] }),
   })
 }

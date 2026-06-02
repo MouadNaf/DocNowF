@@ -11,6 +11,8 @@ import { DoctorAppointmentsPage } from '@/pages/doctor/DoctorAppointmentsPage'
 import { DoctorConsultationPage } from '@/pages/doctor/DoctorConsultationPage'
 import { DoctorSchedulePage } from '@/pages/doctor/DoctorSchedulePage'
 import { DoctorPatientsPage } from '@/pages/doctor/DoctorPatientsPage'
+import { DoctorTreatmentsPage } from '@/pages/doctor/DoctorTreatmentsPage'
+import { DoctorTreatmentDetailPage } from '@/pages/doctor/DoctorTreatmentDetailPage'
 import { DoctorPatientHistoryPage } from '@/pages/doctor/DoctorPatientHistoryPage'
 import { DoctorAccountingPage } from '@/pages/doctor/DoctorAccountingPage'
 import { DoctorStatisticsPage } from '@/pages/doctor/DoctorStatisticsPage'
@@ -27,6 +29,8 @@ import { SecretaryPatientsPage } from '@/pages/secretary/SecretaryPatientsPage'
 import { SecretaryPatientDetailPage } from '@/pages/secretary/SecretaryPatientDetailPage'
 import { SecretaryNewPatientPage } from '@/pages/secretary/SecretaryNewPatientPage'
 import { SecretarySettingsPage } from '@/pages/secretary/SecretarySettingsPage'
+import { SecretaryTreatmentsPage } from '@/pages/secretary/SecretaryTreatmentsPage'
+import { SecretaryTreatmentDetailPage } from '@/pages/secretary/SecretaryTreatmentDetailPage'
 import { CabinetRegisterPage } from '@/pages/register/CabinetRegisterPage'
 import { ClinicRegisterPage } from '@/pages/register/ClinicRegisterPage'
 import { DoctorRegisterPage } from '@/pages/register/DoctorRegisterPage'
@@ -80,6 +84,8 @@ export default function App() {
         <Route path={ROUTES.DOCTOR_CONSULTATION} element={<ProtectedRoute><DoctorConsultationPage /></ProtectedRoute>} />
         <Route path={ROUTES.DOCTOR_SCHEDULE} element={<ProtectedRoute><DoctorSchedulePage /></ProtectedRoute>} />
         <Route path={ROUTES.DOCTOR_PATIENTS} element={<ProtectedRoute><DoctorPatientsPage /></ProtectedRoute>} />
+        <Route path={ROUTES.DOCTOR_TREATMENTS} element={<ProtectedRoute><DoctorTreatmentsPage /></ProtectedRoute>} />
+        <Route path={ROUTES.DOCTOR_TREATMENT_DETAIL} element={<ProtectedRoute><DoctorTreatmentDetailPage /></ProtectedRoute>} />
         <Route path={ROUTES.DOCTOR_PATIENT_HISTORY} element={<ProtectedRoute><DoctorPatientHistoryPage /></ProtectedRoute>} />
         <Route path={ROUTES.DOCTOR_ACCOUNTING} element={<ProtectedRoute><DoctorAccountingPage /></ProtectedRoute>} />
         <Route path={ROUTES.DOCTOR_STATISTICS} element={<ProtectedRoute><DoctorStatisticsPage /></ProtectedRoute>} />
@@ -97,6 +103,8 @@ export default function App() {
         <Route path={ROUTES.SECRETARY_PATIENTS} element={<ProtectedRoute><SecretaryPatientsPage /></ProtectedRoute>} />
         <Route path={ROUTES.SECRETARY_PATIENT_DETAIL} element={<ProtectedRoute><SecretaryPatientDetailPage /></ProtectedRoute>} />
         <Route path={ROUTES.SECRETARY_PATIENT_NEW} element={<ProtectedRoute><SecretaryNewPatientPage /></ProtectedRoute>} />
+        <Route path={ROUTES.SECRETARY_TREATMENTS} element={<ProtectedRoute><SecretaryTreatmentsPage /></ProtectedRoute>} />
+        <Route path={ROUTES.SECRETARY_TREATMENT_DETAIL} element={<ProtectedRoute><SecretaryTreatmentDetailPage /></ProtectedRoute>} />
         <Route path={ROUTES.SECRETARY_SETTINGS} element={<ProtectedRoute><SecretarySettingsPage /></ProtectedRoute>} />
 
         {/* Admin Routes */}

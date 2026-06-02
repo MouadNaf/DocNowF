@@ -95,7 +95,7 @@ class PrivateCabinetController extends Controller
 
     }
 
-    public function update(Request $request, PrivateCabinet $privateCabinet)
+    public function update(Request $request, $id)
 {
     $request->validate([
         'name' => 'sometimes|string|max:255',
@@ -110,9 +110,16 @@ class PrivateCabinetController extends Controller
     ]);
 
     $doctor = Auth::user()->doctor;
+
+    $privateCabinet = PrivateCabinet::find($id);
+
+    if (!$privateCabinet) {
+        return response()->json(['error' => 'Cabinet not found'], 404);
+    }
+
     if ($privateCabinet->doctor_id !== $doctor->id) {
-    return response()->json(['error' => 'Unauthorized'], 403); 
-}
+        return response()->json(['error' => 'Unauthorized'], 403);
+    }
 
     // Only update safe fields
     $privateCabinet->update($request->only([

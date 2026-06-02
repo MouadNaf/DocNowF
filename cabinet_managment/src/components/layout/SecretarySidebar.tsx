@@ -1,4 +1,4 @@
-import { Calendar, ClipboardList, Clock, LayoutDashboard, LogOut, Settings, UserPlus, Users } from 'lucide-react'
+import { Calendar, ClipboardList, Clock, LayoutDashboard, LogOut, Settings, UserPlus, Users, Stethoscope } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { ROUTES } from '@/constants/routes'
 import { MOCK_SECRETARY } from '@/lib/mock/secretary.mock'
@@ -16,6 +16,7 @@ export function SecretarySidebar({ onLogout }: { onLogout: () => void }) {
     { to: ROUTES.SECRETARY_APPOINTMENTS, label: t(language, 'appointments'), icon: ClipboardList },
     { to: ROUTES.SECRETARY_WAITING, label: t(language, 'waitingList'), icon: Clock },
     { to: ROUTES.SECRETARY_PATIENTS, label: t(language, 'patients'), icon: Users },
+    { to: ROUTES.SECRETARY_TREATMENTS, label: 'Traitements', icon: Stethoscope },
     { to: ROUTES.SECRETARY_SETTINGS, label: t(language, 'settings'), icon: Settings },
   ]
   const initials = `${MOCK_SECRETARY.firstName[0]}${MOCK_SECRETARY.lastName[0]}`

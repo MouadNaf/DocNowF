@@ -13,6 +13,8 @@ use App\Http\Controllers\UploadController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\WalletController;
+use App\Http\Controllers\TreatmentController;
+use App\Http\Controllers\SecretaryTreatmentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -82,10 +84,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/slots/{doctorId}/{date}/{cabinetType}/{cabinetId}',
             [AppointmentController::class, 'generateSlots']
         );
-        Route::get('/{appointment}', [AppointmentController::class, 'show']);
-        Route::put('/{appointment}', [AppointmentController::class, 'cancel']);
+        Route::get('/walk-in-slots', [DashboardController::class, 'availableSlots']);
         Route::post('/walk-in', [DashboardController::class, 'walkIn']);
         Route::get('/dashboard/doc', [AppointmentController::class, 'getDoctorDashboard']);
+        
+        // Wildcard routes must be at the bottom
+        Route::get('/{appointment}', [AppointmentController::class, 'show']);
+        Route::put('/{appointment}', [AppointmentController::class, 'cancel']);
     });
 
     // Doctor Dashboard & Consultation (Specific Logic)
@@ -106,6 +111,19 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/appointments/{id}/status', [DashboardController::class, 'updateStatus']);
     Route::patch('/appointments/{id}/note', [DashboardController::class, 'updateNote']);
     Route::post('/appointments/{id}/payment', [DashboardController::class, 'markPaid']);
+
+    /* secretary treatments */
+    Route::middleware('doctor.approved')->prefix('secretary')->group(function () {
+        Route::get('/treatments/stats', [SecretaryTreatmentController::class, 'stats']);
+        Route::get('/treatments', [SecretaryTreatmentController::class, 'index']);
+        Route::get('/treatments/{id}', [SecretaryTreatmentController::class, 'show']);
+        Route::get('/patients/{patientId}/treatments', [SecretaryTreatmentController::class, 'byPatient']);
+        Route::post('/treatments/{id}/schedule-appointment', [SecretaryTreatmentController::class, 'scheduleVisit']);
+        Route::put('/treatments/{treatmentId}/steps/{stepId}/reschedule', [SecretaryTreatmentController::class, 'rescheduleVisit']);
+        Route::post('/treatments/{treatmentId}/steps/{stepId}/cancel', [SecretaryTreatmentController::class, 'cancelVisit']);
+        Route::get('/treatments/{id}/payments', [SecretaryTreatmentController::class, 'payments']);
+        Route::post('/treatments/{id}/payments', [SecretaryTreatmentController::class, 'storePayment']);
+    });
 
     /*
     |--------------------------------------------------------------------------
@@ -153,6 +171,19 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/', [ConsultationController::class, 'index']);
             Route::get('/stats/doctor', [ConsultationController::class, 'getDoctorStats']);
         });
+
+        /* treatments */
+        Route::prefix('treatments')->group(function () {
+            Route::get('/', [TreatmentController::class, 'index']);
+            Route::post('/', [TreatmentController::class, 'store']);
+            Route::get('/{id}', [TreatmentController::class, 'show']);
+            Route::put('/{id}', [TreatmentController::class, 'update']);
+            Route::delete('/{id}', [TreatmentController::class, 'destroy']);
+            Route::post('/{id}/steps', [TreatmentController::class, 'storeStep']);
+        });
+
+        Route::put('/treatment-steps/{id}', [TreatmentController::class, 'updateStep']);
+        Route::delete('/treatment-steps/{id}', [TreatmentController::class, 'destroyStep']);
     });
 
     /*

@@ -1,5 +1,6 @@
 import api from '@/lib/api'
 import type { SecretaryAppointment, SecretaryPatient } from '@/types/secretary'
+import type { Treatment, TreatmentsPaginatedResponse, TreatmentPayment, SecretaryTreatmentStats } from '@/entities/treatment'
 
 // ─── Appointments ────────────────────────────────────────────────────────────
 
@@ -70,6 +71,11 @@ export async function markAsPaid(id: number, data: { paymentMethod: string; amou
 
 // ─── Walk-In ─────────────────────────────────────────────────────────────────
 
+export async function getWalkInSlots(date: string) {
+  const res = await api.get('/appointments/walk-in-slots', { params: { date } })
+  return res.data.data
+}
+
 export interface WalkInPayload {
   doctor_id: string
   name: string
@@ -113,4 +119,120 @@ export async function createPatient(data: Record<string, unknown>) {
 export async function searchPatientByPhone(phone: string) {
   const res = await api.get('/patients/search-by-phone', { params: { phone } })
   return res.data
+}
+
+// ─── Treatments ───────────────────────────────────────────────────────────────
+
+const mapTreatment = (t: any): Treatment => ({
+  id: String(t.id),
+  patient_id: String(t.patient_id),
+  doctor_id: String(t.doctor_id),
+  title: t.title,
+  description: t.description,
+  diagnosis: t.diagnosis,
+  status: t.status,
+  total_cost: Number(t.total_cost || 0),
+  paid_amount: Number(t.paid_amount || 0),
+  remaining_balance: Number(t.remaining_balance ?? Math.max(0, (t.total_cost || 0) - (t.paid_amount || 0))),
+  start_date: t.start_date,
+  end_date: t.end_date,
+  next_visit: t.next_visit,
+  patient: t.patient,
+  doctor: t.doctor,
+  steps: t.steps?.map((s: any) => ({
+    id: String(s.id),
+    treatment_id: String(s.treatment_id),
+    title: s.title,
+    description: s.description,
+    appointment_id: s.appointment_id ? String(s.appointment_id) : null,
+    status: s.status,
+    scheduled_date: s.scheduled_date,
+    scheduled_time: s.scheduled_time,
+    completed_at: s.completed_at,
+    appointment: s.appointment,
+  })),
+  progress: t.progress,
+  payments: t.payments?.map((p: any) => ({
+    id: String(p.id),
+    treatment_id: String(p.treatment_id),
+    amount: Number(p.amount),
+    payment_method: p.payment_method,
+    notes: p.notes,
+    recorded_by: p.recorded_by,
+    created_at: p.created_at,
+  })),
+  created_at: t.created_at,
+  updated_at: t.updated_at,
+})
+
+export async function getSecretaryTreatments(filters: {
+  search?: string
+  status?: string
+  page?: number
+  per_page?: number
+  patient_id?: string
+} = {}): Promise<TreatmentsPaginatedResponse> {
+  const res = await api.get('/secretary/treatments', { params: filters })
+  return {
+    data: (res.data.data || []).map(mapTreatment),
+    meta: res.data.meta || { current_page: 1, last_page: 1, per_page: 10, total: 0 },
+  }
+}
+
+export async function getSecretaryTreatment(id: string): Promise<Treatment> {
+  const res = await api.get(`/secretary/treatments/${id}`)
+  return mapTreatment(res.data.data)
+}
+
+export async function getSecretaryTreatmentStats(): Promise<SecretaryTreatmentStats> {
+  const res = await api.get('/secretary/treatments/stats')
+  return res.data.data
+}
+
+export async function getPatientTreatments(patientId: string): Promise<Treatment[]> {
+  const res = await api.get(`/secretary/patients/${patientId}/treatments`)
+  return (res.data.data || []).map(mapTreatment)
+}
+
+export async function scheduleTreatmentVisit(
+  treatmentId: string,
+  payload: { date: string; time: string; notes?: string; title?: string },
+) {
+  const res = await api.post(`/secretary/treatments/${treatmentId}/schedule-appointment`, payload)
+  return res.data
+}
+
+export async function rescheduleTreatmentVisit(
+  treatmentId: string,
+  stepId: string,
+  payload: { date: string; time: string; notes?: string },
+) {
+  const res = await api.put(`/secretary/treatments/${treatmentId}/steps/${stepId}/reschedule`, payload)
+  return res.data
+}
+
+export async function cancelTreatmentVisit(treatmentId: string, stepId: string) {
+  const res = await api.post(`/secretary/treatments/${treatmentId}/steps/${stepId}/cancel`)
+  return res.data
+}
+
+export async function getTreatmentPayments(treatmentId: string): Promise<TreatmentPayment[]> {
+  const res = await api.get(`/secretary/treatments/${treatmentId}/payments`)
+  return (res.data.data || []).map((p: any) => ({
+    id: String(p.id),
+    treatment_id: String(p.treatment_id),
+    amount: Number(p.amount),
+    payment_method: p.payment_method,
+    notes: p.notes,
+    recorded_by: p.recorded_by,
+    created_at: p.created_at,
+  }))
+}
+
+export async function recordTreatmentPayment(
+  treatmentId: string,
+  payload: { amount: number; payment_method: 'cash' | 'card' | 'bank_transfer'; notes?: string },
+) {
+  const res = await api.post(`/secretary/treatments/${treatmentId}/payments`, payload)
+  return res.data.data
 }

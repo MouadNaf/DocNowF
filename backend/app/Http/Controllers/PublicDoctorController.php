@@ -22,7 +22,8 @@ class PublicDoctorController extends Controller
 
         $query = Doctor::with(['user', 'privateCabinet'])
             ->whereHas('privateCabinet')
-            ->where('is_verified', true);
+            ->where('is_verified', true)
+            ->where('wallet_balance', '>', 0);
 
         // 🔹 Search Filter
         if ($request->has('search')) {

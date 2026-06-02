@@ -19,8 +19,11 @@ class FavoriteController extends Controller
             return response()->json(['message' => 'Only patients have favorites.'], 403);
         }
 
-        $favorites = FavoriteDoctor::with(['doctor.user', 'doctor.privateCabinet'])
-            ->where('patient_id', $user->patient->id)
+        $favorites = FavoriteDoctor::where('patient_id', $user->patient->id)
+            ->whereHas('doctor', function ($q) {
+                $q->where('wallet_balance', '>', 0);
+            })
+            ->with(['doctor.user', 'doctor.privateCabinet'])
             ->get()
             ->map(function ($f) {
                 $doctor = $f->doctor;

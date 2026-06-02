@@ -11,6 +11,7 @@ import {
   LogOut,
   CalendarDays,
   List,
+  ClipboardList,
   User
 } from 'lucide-react'
 import { ROUTES } from '@/constants/routes'
@@ -29,6 +30,7 @@ export function Sidebar({ role, onLogout }: { role: string; onLogout: () => void
     { path: ROUTES.DOCTOR_APPOINTMENTS, label: t(language, 'appointments'), Icon: CalendarDays, role: ['doctor'] },
     { path: ROUTES.DOCTOR_SCHEDULE, label: t(language, 'schedule'), Icon: Calendar, role: ['doctor'] },
     { path: ROUTES.DOCTOR_PATIENTS, label: t(language, 'patients'), Icon: Users, role: ['doctor'] },
+    { path: ROUTES.DOCTOR_TREATMENTS, label: t(language, 'treatments'), Icon: ClipboardList, role: ['doctor'] },
     { path: ROUTES.DOCTOR_ACCOUNTING, label: t(language, 'accounting'), Icon: Coins, role: ['doctor'] },
     { path: ROUTES.DOCTOR_STATISTICS, label: t(language, 'statistics'), Icon: BarChart3, role: ['doctor'] },
     { path: ROUTES.DOCTOR_SECRETARIES, label: t(language, 'secretaries'), Icon: UserCog, role: ['doctor'] },

@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getAppointments, getDashboardStats, getPatients, getSchedules, updateAppointmentStatus, getAppointmentDetails, saveConsultation, getPatientHistory, getWallet, getWalletTransactions, getRechargeRequests } from './doctor.api';
+import { getAppointments, getDashboardStats, getPatients, getSchedules, updateAppointmentStatus, getAppointmentDetails, saveConsultation, getPatientHistory, getWallet, getWalletTransactions, getRechargeRequests, getTreatments, getTreatment, createTreatment, deleteTreatment, createTreatmentStep, updateTreatmentStep, deleteTreatmentStep, getWalkInSlots } from './doctor.api';
 import type { Appointment } from '@/entities/appointment';
 import type { Patient } from '@/entities/patient';
 import type { Schedule } from '@/entities/schedule';
+import type { Treatment, TreatmentsPaginatedResponse, CreateTreatmentPayload, CreateTreatmentStepPayload, UpdateTreatmentStepPayload } from '@/entities/treatment';
 
 export const useDashboardStats = () => {
     const query = useQuery({
@@ -136,4 +137,115 @@ export const useRechargeRequests = () => {
     return { requests: query.data || [], loading: query.isLoading, refresh: query.refetch };
 };
 
+export const useTreatments = (filters: { search?: string; status?: string; page?: number; per_page?: number } = {}) => {
+    const [result, setResult] = useState<TreatmentsPaginatedResponse>({
+        data: [],
+        meta: { current_page: 1, last_page: 1, per_page: 10, total: 0 },
+    });
+    const [loading, setLoading] = useState(true);
+
+    const refresh = () => {
+        setLoading(true);
+        return getTreatments(filters).then((res) => {
+            setResult(res);
+            setLoading(false);
+            return res;
+        });
+    };
+
+    useEffect(() => {
+        refresh();
+    }, [JSON.stringify(filters)]);
+
+    return { treatments: result.data, meta: result.meta, loading, refresh };
+};
+
+export const useTreatment = (id: string | undefined) => {
+    const [treatment, setTreatment] = useState<Treatment | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    const refresh = () => {
+        if (!id) return Promise.resolve(null);
+        setLoading(true);
+        return getTreatment(id).then((res) => {
+            setTreatment(res);
+            setLoading(false);
+            return res;
+        });
+    };
+
+    useEffect(() => {
+        refresh();
+    }, [id]);
+
+    const addStep = async (payload: CreateTreatmentStepPayload) => {
+        if (!id) return;
+        const updated = await createTreatmentStep(id, payload);
+        setTreatment(updated);
+        return updated;
+    };
+
+    const editStep = async (stepId: string, payload: UpdateTreatmentStepPayload) => {
+        const updated = await updateTreatmentStep(stepId, payload);
+        setTreatment(updated);
+        return updated;
+    };
+
+    const removeStep = async (stepId: string) => {
+        const updated = await deleteTreatmentStep(stepId);
+        setTreatment(updated);
+        return updated;
+    };
+
+    return { treatment, loading, refresh, addStep, editStep, removeStep };
+};
+
+export const useCreateTreatment = () => {
+    const [loading, setLoading] = useState(false);
+
+    const create = async (payload: CreateTreatmentPayload) => {
+        setLoading(true);
+        try {
+            return await createTreatment(payload);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return { create, loading };
+};
+
+export const useDeleteTreatment = () => {
+    const [loading, setLoading] = useState(false);
+
+    const remove = async (id: string) => {
+        setLoading(true);
+        try {
+            await deleteTreatment(id);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return { remove, loading };
+};
+
+export const useWalkInSlots = (date: string, excludeAppointmentId?: string) => {
+    const [slots, setSlots] = useState<{ start: string; end: string; is_available: boolean }[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [message, setMessage] = useState<string | undefined>();
+
+    useEffect(() => {
+        if (!date) return;
+        setLoading(true);
+        getWalkInSlots(date, excludeAppointmentId)
+            .then((res) => {
+                setSlots(res.slots);
+                setMessage(res.message);
+            })
+            .finally(() => setLoading(false));
+    }, [date, excludeAppointmentId]);
+
+    return { slots, loading, message };
+};
 

@@ -48,7 +48,8 @@ class ChatController extends Controller
     {
         $query = Doctor::with(['user', 'privateCabinet'])
             ->whereHas('privateCabinet')
-            ->where('is_verified', true);
+            ->where('is_verified', true)
+            ->where('wallet_balance', '>', 0);
 
         // 🔹 Priority 1: Search by name if provided (Precise)
         if (!empty($intent['doctor_name'])) {
@@ -94,7 +95,8 @@ class ChatController extends Controller
     {
         $query = Doctor::with(['user', 'privateCabinet', 'availabilities'])
             ->whereHas('privateCabinet')
-            ->where('is_verified', true);
+            ->where('is_verified', true)
+            ->where('wallet_balance', '>', 0);
 
         if (!empty($intent['doctor_name'])) {
             $query->whereHas('user', function ($q) use ($intent) {
@@ -154,6 +156,7 @@ class ChatController extends Controller
         $doctor = Doctor::with(['user', 'privateCabinet'])
             ->whereHas('privateCabinet')
             ->where('is_verified', true)
+            ->where('wallet_balance', '>', 0)
             ->whereHas('user', function ($q) use ($doctorName) {
                 $q->where('name', 'like', '%' . $doctorName . '%');
             })
@@ -422,68 +425,160 @@ class ChatController extends Controller
     }
 
     /**
-     * Simple regex-based intent extractor for when Gemini API is exhausted.
-     * This ensures the chatbot "always works" for core database features.
+     * Smart NLP local fallback intent extractor.
+     * Understands natural language without requiring exact phrases.
      */
     private function localFallbackIntent(string $message, string $today): array
     {
-        $msg = strtolower($message);
+        $msg      = strtolower(trim($message));
+        $original = trim($message);
 
-        // 1. VIEWING (Show/View) - Highest Priority
-        if (str_contains($msg, 'appointment') && (str_contains($msg, 'my') || str_contains($msg, 'show') || str_contains($msg, 'view') || str_contains($msg, 'list'))) {
-            return ['intent' => 'view_appointments'];
+        // ── Extract TIME ────────────────────────────────────────────────────
+        $time = null;
+        if (preg_match('/\b(\d{1,2}):(\d{2})\b/', $msg, $m)) {
+            $time = sprintf('%02d:%02d', (int)$m[1], (int)$m[2]);
+        } elseif (preg_match('/\b(\d{1,2})\s*h(\d{0,2})\b/', $msg, $m)) {
+            $time = sprintf('%02d:%02d', (int)$m[1], (int)($m[2] ?: 0));
+        } elseif (preg_match('/\bat\s+(\d{1,2})(?:am|pm)?\b/', $msg, $m)) {
+            $h = (int)$m[1];
+            if (str_contains($msg, 'pm') && $h < 12) $h += 12;
+            $time = sprintf('%02d:00', $h);
+        } elseif (preg_match('/\b(\d{1,2})\s*(?:am|pm)\b/', $msg, $m)) {
+            $h = (int)$m[1];
+            if (str_contains($msg, 'pm') && $h < 12) $h += 12;
+            if (str_contains($msg, 'am') && $h == 12) $h = 0;
+            $time = sprintf('%02d:00', $h);
         }
 
-        // 2. CANCELLING
-        if (str_contains($msg, 'cancel')) {
-            return ['intent' => 'cancel_appointment'];
+        // ── Extract DATE ─────────────────────────────────────────────────────
+        $date = $today;
+        if (str_contains($msg, 'tomorrow') || str_contains($msg, 'demain')) {
+            $date = Carbon::parse($today)->addDay()->toDateString();
+        } elseif (preg_match('/\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/', $msg, $m)) {
+            $date = Carbon::parse('next ' . $m[1])->toDateString();
+        } elseif (preg_match('/\b(\d{4}-\d{2}-\d{2})\b/', $msg, $m)) {
+            $date = $m[1];
         }
 
-        // 3. BOOKING / CREATE
-        if (str_contains($msg, 'book') || str_contains($msg, 'create') || (str_contains($msg, 'appointment') && !str_contains($msg, 'show'))) {
-            $doctorName = null;
-            if (str_contains($msg, 'ayoub')) $doctorName = 'ayoub dell';
-            if (str_contains($msg, 'aymen')) $doctorName = 'aymen ouarzedding';
+        // ── Extract DOCTOR NAME ──────────────────────────────────────────────
+        $doctorName = null;
+        // Explicit "dr" / "doctor" prefix
+        if (preg_match('/\b(?:dr\.?|doctor|dre|docteur)\s+([a-z]+(?:\s+[a-z]+)?)/i', $original, $m)) {
+            $doctorName = strtolower(trim($m[1]));
+        }
+        // "with/see/chez/book" pattern
+        if (!$doctorName && preg_match('/\b(?:with|see|chez|avec|visit|book)\s+([a-z]{3,}(?:\s+[a-z]{3,})?)/i', $original, $m)) {
+            $candidate = strtolower(trim($m[1]));
+            if (!in_array($candidate, ['my', 'the', 'a', 'an', 'appointment', 'doctor', 'him', 'her'])) {
+                $doctorName = $candidate;
+            }
+        }
 
+        // ── Extract SPECIALTY ────────────────────────────────────────────────
+        $specialtyMap = [
+            'cardiolog' => 'cardiology',      'heart'        => 'cardiology',
+            'dentist'   => 'dentistry',       'teeth'        => 'dentistry',    'tooth' => 'dentistry',
+            'dermatol'  => 'dermatology',     'skin'         => 'dermatology',
+            'pediatr'   => 'pediatrics',      'children'     => 'pediatrics',   'child' => 'pediatrics',
+            'neurolog'  => 'neurology',       'brain'        => 'neurology',
+            'orthoped'  => 'orthopedics',     'bone'         => 'orthopedics',  'joint' => 'orthopedics',
+            'gynecolog' => 'gynecology',
+            'ophthalm'  => 'ophthalmology',   'eye'          => 'ophthalmology',
+            'psychiat'  => 'psychiatry',      'mental'       => 'psychiatry',
+            'endocrin'  => 'endocrinology',   'diabetes'     => 'endocrinology',
+            'gastrolog' => 'gastroenterology','stomach'      => 'gastroenterology',
+            'urology'   => 'urology',         'kidney'       => 'urology',
+            'pulmonol'  => 'pulmonology',     'lung'         => 'pulmonology',
+            'general'   => 'general medicine','medecin'      => 'general medicine',
+        ];
+        $specialty = null;
+        foreach ($specialtyMap as $keyword => $value) {
+            if (str_contains($msg, $keyword)) { $specialty = $value; break; }
+        }
+
+        // ── Detect SYMPTOMS ──────────────────────────────────────────────────
+        $symptomWords = ['pain','ache','fever','cough','sick','hurt','tired','dizzy',
+                         'nausea','vomit','bleed','swollen','rash','allerg','infection',
+                         'douleur','mal','fievre','toux','malade'];
+        $hasSymptom = false;
+        foreach ($symptomWords as $sym) {
+            if (str_contains($msg, $sym)) { $hasSymptom = true; break; }
+        }
+
+        // ────────────────────────────────────────────────────────────────────
+        // INTENT DETECTION (priority order)
+        // ────────────────────────────────────────────────────────────────────
+
+        // 1. VIEW APPOINTMENTS
+        $viewPhrases = ['my appointment','show appointment','view appointment','list appointment',
+                        'my visit','my booking','my schedule','upcoming appointment',
+                        'show my','view my','see my appointment','all appointment','my rdv','mes rendez'];
+        foreach ($viewPhrases as $phrase) {
+            if (str_contains($msg, $phrase)) return ['intent' => 'view_appointments'];
+        }
+
+        // 2. CANCEL
+        $cancelPhrases = ['cancel','annul','remove appointment','delete appointment',
+                          "don't want",'dont want','no longer need','not going','stop appointment'];
+        foreach ($cancelPhrases as $phrase) {
+            if (str_contains($msg, $phrase)) return ['intent' => 'cancel_appointment', 'appointment_id' => null];
+        }
+
+        // 3. BOOK
+        $bookPhrases = ['book','reserv','schedul','make appointment','set appointment',
+                        'create appointment','want to see','want to visit','see a doctor',
+                        'appointment with','rendez-vous','prendre rdv','take appointment',
+                        'new appointment','fix appointment','want appointment','need appointment',
+                        'need a doctor','passer chez'];
+        $isBook = false;
+        foreach ($bookPhrases as $phrase) {
+            if (str_contains($msg, $phrase)) { $isBook = true; break; }
+        }
+        if ($isBook || ($doctorName && $time)) {
             return [
-                'intent' => 'book_appointment',
+                'intent'      => 'book_appointment',
                 'doctor_name' => $doctorName,
-                'date' => str_contains($msg, 'tomorrow') ? Carbon::parse($today)->addDay()->toDateString() : $today,
-                'time' => '09:00'
+                'date'        => $date,
+                'time'        => $time,
             ];
         }
 
-        // 4. SEARCHING / NAMES
-        if (str_contains($msg, 'search') || str_contains($msg, 'find') || str_contains($msg, 'doctor') || 
-            str_contains($msg, 'dentist') || str_contains($msg, 'cardiologist') || 
-            str_contains($msg, 'ayoub') || str_contains($msg, 'aymen')) {
-            
-            $specialty = null;
-            if (str_contains($msg, 'dentist')) $specialty = 'dentist';
-            if (str_contains($msg, 'cardiologist')) $specialty = 'cardiologist';
-            if (str_contains($msg, 'neurologist')) $specialty = 'neurologist';
+        // 4. AVAILABILITY
+        $availPhrases = ['available','availability','free slot','open slot','when is',
+                         'schedule of','working today','working tomorrow','dispo','disponible'];
+        foreach ($availPhrases as $phrase) {
+            if (str_contains($msg, $phrase)) {
+                return ['intent' => 'check_availability', 'doctor_name' => $doctorName, 'date' => $date];
+            }
+        }
 
-            $doctorName = null;
-            if (str_contains($msg, 'ayoub')) $doctorName = 'ayoub dell';
-            if (str_contains($msg, 'aymen')) $doctorName = 'aymen ouarzedding';
-
+        // 5. SYMPTOM GUIDANCE
+        if ($hasSymptom) {
             return [
-                'intent' => 'search_doctor',
-                'specialty' => $specialty,
+                'intent'                => 'symptom_guidance',
+                'symptoms'              => $original,
+                'recommended_specialty' => $specialty ?? 'a general practitioner',
+            ];
+        }
+
+        // 6. SEARCH DOCTOR
+        $searchPhrases = ['find','search','look for','show doctor','list doctor','find doctor',
+                          'who is','get doctor','nearby doctor','doctor near','cherche','trouver'];
+        $isSearch = false;
+        foreach ($searchPhrases as $phrase) {
+            if (str_contains($msg, $phrase)) { $isSearch = true; break; }
+        }
+        if ($isSearch || $specialty || $doctorName) {
+            return [
+                'intent'      => 'search_doctor',
+                'specialty'   => $specialty,
                 'doctor_name' => $doctorName,
-                'city' => str_contains($msg, 'alger') ? 'Alger' : (str_contains($msg, 'oran') ? 'Oran' : null)
+                'city'        => str_contains($msg, 'alger') ? 'Alger' : (str_contains($msg, 'oran') ? 'Oran' : null),
             ];
         }
 
-        // 5. AVAILABILITY
-        if (str_contains($msg, 'available') || str_contains($msg, 'free')) {
-            return [
-                'intent' => 'check_availability',
-                'date' => str_contains($msg, 'tomorrow') ? Carbon::parse($today)->addDay()->toDateString() : $today
-            ];
-        }
-
-        return ['intent' => 'faq', 'question' => $message];
+        // 7. FAQ / DEFAULT
+        return ['intent' => 'faq', 'question' => $original];
     }
 
     private function respond(string $message, string $type, array $data, bool $success = true): \Illuminate\Http\JsonResponse

@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 
 class AppointmentController extends Controller
 {
-    public function generateSlots($doctorId, $date, $cabinetType, $cabinetId)
+    public function generateSlots($doctorId, $date, $cabinetType, $cabinetId, $excludeAppointmentId = null)
 {
     // 1. Fetch Doctor
     $doctor = Doctor::with(['user', 'clinics', 'collectiveCabinets', 'privateCabinet'])
@@ -87,22 +87,16 @@ class AppointmentController extends Controller
         ->where('day_of_week', $dayOfWeek)
         ->get();
 
-    // Fallback: if no exact weekday config exists, reuse doctor's configured ranges
-    // so the selected date can still show slots in the patient app.
-    if ($availabilities->isEmpty()) {
-        $availabilities = DoctorAvailability::where('doctor_id', $doctor->id)->get();
-    }
-
     if ($availabilities->isEmpty()) {
         return response()->json([
             'success' => true,
             'data' => [
-                'doctor_name' => $doctor->user->name,
-                'date' => $date,
+                'doctor_name'   => $doctor->user->name,
+                'date'          => $date,
                 'location_type' => $cabinetType,
-                'slots' => [],
+                'slots'         => [],
             ],
-            'message' => 'No availability configured for this doctor.'
+            'message' => "No availability configured for {$dayOfWeek}. Please choose another day.",
         ]);
     }
 
@@ -138,11 +132,17 @@ foreach ($availabilities as $availability) {
 // convert associative array → normal array
 $slots = array_values($slots);
 
-    // 5. Get booked slots
-    $bookedStartTimes = Appointment::where('doctor_id', $doctor->id)
+    // 5. Get booked slots (confirmed, arrived, completed all occupy a slot)
+    $bookedQuery = Appointment::where('doctor_id', $doctor->id)
         ->whereDate('appointment_date', $date)
         ->where($locationFilter)
-        ->whereIn('status', ['confirmed', 'completed'])
+        ->whereIn('status', ['confirmed', 'arrived', 'completed']);
+
+    if ($excludeAppointmentId) {
+        $bookedQuery->where('id', '!=', $excludeAppointmentId);
+    }
+
+    $bookedStartTimes = $bookedQuery
         ->pluck('start_time')
         ->map(fn($time) => Carbon::parse($time)->format('H:i'))
         ->toArray();
@@ -276,7 +276,7 @@ $slots = array_values($slots);
     $slotsData = $slotsResponse->getData(true);
 
     $validSlot = collect($slotsData['data']['slots'] ?? [])
-        ->firstWhere('start', $request->start_time);
+        ->first(fn ($slot) => $slot['start'] === $request->start_time && ($slot['is_available'] ?? false));
 
     if (!$validSlot) {
         return response()->json([

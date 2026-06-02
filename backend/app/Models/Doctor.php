@@ -84,4 +84,9 @@ class Doctor extends Model
 {
     return $this->hasOne(PrivateCabinet::class);
 }
+
+    public function treatments()
+    {
+        return $this->hasMany(Treatment::class);
+    }
 }

@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { SecretaryLayout } from '@/components/layout/SecretaryLayout'
-import { 
-  useTodaySchedule, 
-  useCancelAppointment, 
-  useMarkAsArrived, 
-  useMarkAsNoShow, 
-  useMarkAsPaid, 
-  useSaveNote 
+import {
+  useTodaySchedule,
+  useCancelAppointment,
+  useMarkAsArrived,
+  useMarkAsNoShow,
+  useMarkAsPaid,
+  useSaveNote,
 } from '@/hooks/useSecretary'
 import type { SecretaryAppointment } from '@/types/secretary'
 

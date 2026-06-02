@@ -228,6 +228,55 @@ class DashboardController extends Controller
     }
 
     // -------------------------------------------------------------------------
+    // 2.5 GET /api/appointments/walk-in-slots
+    // -------------------------------------------------------------------------
+    public function availableSlots(Request $request)
+    {
+        $request->validate([
+            'date' => 'required|date',
+            'exclude_appointment_id' => 'nullable|integer|exists:appointments,id',
+        ]);
+
+        $doctorId = $this->resolveDoctorId($request);
+        if (!$doctorId) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $auth = Auth::user();
+        $cabinetType = 'private';
+        $cabinetId = null;
+
+        if ($auth->role === 'secretary' && $auth->secretary) {
+            $doctor = Doctor::find($doctorId);
+            $cabinetId = $doctor?->privateCabinet?->id;
+        } elseif ($auth->role === 'doctor') {
+            $cabinetId = $auth->doctor?->privateCabinet?->id;
+        }
+
+        if (!$cabinetId) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'doctor_name'   => null,
+                    'date'          => $request->date,
+                    'location_type' => $cabinetType,
+                    'slots'         => [],
+                ],
+                'message' => 'No cabinet configured for this doctor. Please set up a private cabinet first.',
+            ]);
+        }
+
+        return app(\App\Http\Controllers\AppointmentController::class)
+            ->generateSlots(
+                $doctorId,
+                $request->date,
+                $cabinetType,
+                $cabinetId,
+                $request->exclude_appointment_id
+            );
+    }
+
+    // -------------------------------------------------------------------------
     // 3. GET /api/appointments
     //    Query: doctor_id (optional), date?, patient?, status?
     //    Auto-detects doctor_id from auth (doctor/secretary) when not supplied
