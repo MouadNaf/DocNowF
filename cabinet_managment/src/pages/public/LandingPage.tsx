@@ -2,25 +2,25 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Search, 
-  Stethoscope, 
   MessageSquare, 
   ShieldCheck, 
-  Users, 
   ArrowRight,
   Menu,
   X,
   Star,
-  MapPin,
-  Calendar
+  Languages
 } from 'lucide-react';
 import { Logo } from '@/components/ui/Logo';
 import { Button } from '@/components/ui/Button';
 import { ROUTES, ROLE_HOME } from '@/constants/routes';
 import { useAuthStore } from '@/store/auth.store';
+import { usePreferencesStore } from '@/store/preferences.store';
 import { cn } from '@/lib/utils/cn';
+import { t } from '@/lib/i18n';
 
 export function LandingPage() {
-  const { isAuthenticated, user, logout } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
+  const { language, toggleLanguage } = usePreferencesStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -42,31 +42,42 @@ export function LandingPage() {
           
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-8">
-            <NavLink href="#hero">Accueil</NavLink>
-            <NavLink href="#doctors">Médecins</NavLink>
-            <NavLink href="#ai">Assistant IA</NavLink>
-            <NavLink href="#about">À propos</NavLink>
-            <NavLink href="#contact">Contact</NavLink>
+            <NavLink href="#hero">{t(language, 'home')}</NavLink>
+            <Link to={ROUTES.DOCTORS} className="text-sm font-bold text-gray-600 hover:text-[#1D9E75] transition-colors">
+              {t(language, 'doctors_nav')}
+            </Link>
+            <NavLink href="#ai">{t(language, 'aiAssistant')}</NavLink>
+            <NavLink href="#about">{t(language, 'about')}</NavLink>
+            <NavLink href="#contact">{t(language, 'contact')}</NavLink>
           </div>
 
           <div className="hidden md:flex items-center gap-4">
+            <button 
+              onClick={toggleLanguage}
+              className="flex items-center gap-1.5 text-sm font-bold text-gray-600 hover:text-[#1D9E75] transition-colors bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-100"
+              title={t(language, 'changeLanguage')}
+            >
+              <Languages size={16} />
+              <span className="uppercase">{language}</span>
+            </button>
+
             {isAuthenticated ? (
               <div className="flex items-center gap-4">
                 <Link to={user?.role ? ROLE_HOME[user.role] : ROUTES.LOGIN}>
-                  <Button variant="ghost" className="font-bold">Tableau de bord</Button>
+                  <Button variant="ghost" className="font-bold">{t(language, 'dashboard')}</Button>
                 </Link>
                 <div className="h-10 w-10 rounded-full bg-[#E8F7F1] flex items-center justify-center text-[#1D9E75] font-bold border-2 border-white shadow-sm">
-                  {user?.name?.charAt(0) || 'U'}
+                  {user?.firstName?.charAt(0) || 'U'}
                 </div>
               </div>
             ) : (
               <>
                 <Link to={ROUTES.LOGIN}>
-                  <Button variant="ghost" className="font-bold">Connexion</Button>
+                  <Button variant="ghost" className="font-bold">{t(language, 'login_btn')}</Button>
                 </Link>
                 <Link to={ROUTES.ROLE_PICKER}>
-                  <Button className="bg-[#1D9E75] hover:bg-[#15805d] rounded-full px-6 font-bold shadow-lg shadow-emerald-100">
-                    S'inscrire
+                  <Button className="bg-[#1D9E75] hover:bg-[#15805d] rounded-full px-6 font-bold shadow-lg shadow-emerald-100 text-white">
+                    {t(language, 'register_btn')}
                   </Button>
                 </Link>
               </>
@@ -82,21 +93,33 @@ export function LandingPage() {
         {/* Mobile Menu */}
         {isMenuOpen && (
           <div className="absolute top-full left-0 right-0 bg-white border-b border-gray-100 p-6 flex flex-col gap-4 animate-in fade-in slide-in-from-top-4 md:hidden">
-            <NavLink href="#hero" onClick={() => setIsMenuOpen(false)}>Accueil</NavLink>
-            <NavLink href="#doctors" onClick={() => setIsMenuOpen(false)}>Médecins</NavLink>
-            <NavLink href="#ai" onClick={() => setIsMenuOpen(false)}>Assistant IA</NavLink>
+            <NavLink href="#hero" onClick={() => setIsMenuOpen(false)}>{t(language, 'home')}</NavLink>
+            <Link to={ROUTES.DOCTORS} className="text-sm font-bold text-gray-600 hover:text-[#1D9E75] transition-colors" onClick={() => setIsMenuOpen(false)}>
+              {t(language, 'doctors_nav')}
+            </Link>
+            <NavLink href="#ai" onClick={() => setIsMenuOpen(false)}>{t(language, 'aiAssistant')}</NavLink>
             <div className="h-[1px] bg-gray-100 my-2" />
+            <button 
+              onClick={() => {
+                toggleLanguage();
+                setIsMenuOpen(false);
+              }}
+              className="flex items-center justify-center gap-2 text-sm font-bold text-gray-600 hover:text-[#1D9E75] transition-colors bg-gray-50 px-4 py-2.5 rounded-xl border border-gray-100 w-full"
+            >
+              <Languages size={18} />
+              <span className="uppercase">{t(language, 'language_label')} {language}</span>
+            </button>
             {isAuthenticated ? (
               <Link to={user?.role ? ROLE_HOME[user.role] : ROUTES.LOGIN}>
-                <Button className="w-full">Tableau de bord</Button>
+                <Button className="w-full">{t(language, 'dashboard')}</Button>
               </Link>
             ) : (
               <div className="flex flex-col gap-3">
                 <Link to={ROUTES.LOGIN} className="w-full">
-                  <Button variant="outline" className="w-full">Connexion</Button>
+                  <Button variant="outline" className="w-full">{t(language, 'login_btn')}</Button>
                 </Link>
                 <Link to={ROUTES.ROLE_PICKER} className="w-full">
-                  <Button className="w-full bg-[#1D9E75]">S'inscrire</Button>
+                  <Button className="w-full bg-[#1D9E75] text-white">{t(language, 'register_btn')}</Button>
                 </Link>
               </div>
             )}
@@ -117,15 +140,15 @@ export function LandingPage() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#1D9E75] opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-[#1D9E75]"></span>
               </span>
-              Votre futur santé commence ici
+              {t(language, 'heroBadge')}
             </div>
             
             <h1 className="text-5xl lg:text-7xl font-black text-gray-900 leading-[1.1]">
-              Consultation médicale à <span className="text-[#1D9E75]">portée de clic.</span>
+              {t(language, 'heroTitle1')} <span className="text-[#1D9E75]">{t(language, 'heroTitle2')}</span>
             </h1>
             
             <p className="text-lg text-gray-600 leading-relaxed max-w-lg">
-              DocNow utilise l'intelligence artificielle pour analyser vos symptômes et vous orienter vers les meilleurs spécialistes proches de chez vous.
+              {t(language, 'heroDesc')}
             </p>
 
             {/* Search Bar - Combined */}
@@ -134,13 +157,15 @@ export function LandingPage() {
                 <Search className="text-gray-400" size={20} />
                 <input 
                   type="text" 
-                  placeholder="Spécialité, symptôme (ex: Cardiologue, maux de tête...)" 
+                  placeholder={t(language, 'heroSearchPlaceholder')} 
                   className="bg-transparent border-none focus:ring-0 w-full text-sm font-medium"
                 />
               </div>
-              <Button size="lg" className="bg-[#1D9E75] hover:bg-[#15805d] rounded-2xl px-8 font-bold whitespace-nowrap shadow-lg shadow-emerald-100">
-                Trouver un médecin
-              </Button>
+              <Link to={ROUTES.DOCTORS}>
+                <Button size="lg" className="bg-[#1D9E75] hover:bg-[#15805d] rounded-2xl px-8 font-bold whitespace-nowrap shadow-lg shadow-emerald-100 text-white">
+                  {t(language, 'heroSearchBtn')}
+                </Button>
+              </Link>
             </div>
 
             <div className="flex items-center gap-6 pt-4">
@@ -155,7 +180,7 @@ export function LandingPage() {
                 </div>
               </div>
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                Plus de <span className="text-gray-900">10,000 patients</span> nous font confiance
+                {t(language, 'moreThan')} <span className="text-gray-900">{t(language, 'patients10k')}</span> {t(language, 'trustUs')}
               </p>
             </div>
           </div>
@@ -164,7 +189,7 @@ export function LandingPage() {
           <div className="relative animate-in fade-in slide-in-from-right-8 duration-700 delay-200">
             <div className="relative rounded-[48px] overflow-hidden shadow-2xl">
               <img 
-                src="https://images.unsplash.com/photo-1559839734-2b71f1536783?q=80&w=2070&auto=format&fit=crop" 
+                src="/doctor_hero.png" 
                 alt="Healthcare Professional"
                 className="w-full aspect-[4/5] object-cover"
               />
@@ -178,15 +203,15 @@ export function LandingPage() {
                    <Star size={24} fill="currentColor" />
                  </div>
                  <div>
-                   <p className="text-sm font-bold text-gray-900">Médecins Certifiés</p>
-                   <p className="text-xs text-gray-500">4.9/5 Note moyenne</p>
+                   <p className="text-sm font-bold text-gray-900">{t(language, 'certifiedDoctors')}</p>
+                   <p className="text-xs text-gray-500">{t(language, 'averageRating')}</p>
                  </div>
                </div>
             </div>
 
             <div className="absolute top-20 -right-8 bg-white p-4 rounded-2xl shadow-2xl shadow-black/5 border border-gray-100 flex items-center gap-3">
                <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-               <span className="text-xs font-bold">Médecins en ligne</span>
+               <span className="text-xs font-bold">{t(language, 'onlineDoctors')}</span>
             </div>
           </div>
         </div>
@@ -196,27 +221,27 @@ export function LandingPage() {
       <section id="doctors" className="py-24 bg-gray-50/50">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center space-y-4 mb-16">
-            <h2 className="text-3xl lg:text-4xl font-black text-gray-900">Tout ce dont vous avez besoin.</h2>
-            <p className="text-gray-500 max-w-xl mx-auto">Une plateforme complète pour gérer votre santé au quotidien.</p>
+            <h2 className="text-3xl lg:text-4xl font-black text-gray-900">{t(language, 'featuresTitle')}</h2>
+            <p className="text-gray-500 max-w-xl mx-auto">{t(language, 'featuresDesc')}</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
             <FeatureCard 
               icon={<Search size={28} />}
-              title="Recherche intelligente"
-              desc="Trouvez le spécialiste idéal en quelques secondes selon votre localisation et vos besoins."
+              title={t(language, 'feat1Title')}
+              desc={t(language, 'feat1Desc')}
               color="bg-blue-50 text-blue-600"
             />
             <FeatureCard 
               icon={<MessageSquare size={28} />}
-              title="Assistant IA"
-              desc="Décrivez vos symptômes à notre IA et obtenez une orientation immédiate vers le bon médecin."
+              title={t(language, 'feat2Title')}
+              desc={t(language, 'feat2Desc')}
               color="bg-emerald-50 text-emerald-600"
             />
             <FeatureCard 
               icon={<ShieldCheck size={28} />}
-              title="Dossier Sécurisé"
-              desc="Vos données médicales sont cryptées et accessibles uniquement par vous et vos médecins."
+              title={t(language, 'feat3Title')}
+              desc={t(language, 'feat3Desc')}
               color="bg-purple-50 text-purple-600"
             />
           </div>
@@ -235,16 +260,16 @@ export function LandingPage() {
             </div>
             
             <div className="text-white space-y-8 relative z-10">
-              <h2 className="text-4xl lg:text-6xl font-black leading-tight">L'intelligence artificielle au service de votre santé.</h2>
+              <h2 className="text-4xl lg:text-6xl font-black leading-tight">{t(language, 'aiTitle')}</h2>
               <p className="text-emerald-50 text-lg">
-                Notre assistant DocNow AI analyse vos symptômes avec précision pour vous rassurer et vous guider. Gagnez du temps et évitez les recherches inquiétantes sur internet.
+                {t(language, 'aiDesc')}
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button className="bg-white text-[#1D9E75] hover:bg-emerald-50 rounded-2xl px-8 h-14 font-bold text-lg">
-                  Essayer l'assistant
+                  {t(language, 'tryAiBtn')}
                 </Button>
                 <Button variant="outline" className="border-white/30 text-white hover:bg-white/10 rounded-2xl px-8 h-14 font-bold text-lg">
-                  Comment ça marche ?
+                  {t(language, 'howItWorksBtn')}
                 </Button>
               </div>
             </div>
@@ -252,10 +277,10 @@ export function LandingPage() {
             <div className="relative z-10 hidden lg:block">
               <div className="bg-white/10 backdrop-blur-2xl rounded-[32px] p-6 border border-white/20 shadow-2xl">
                  <div className="space-y-4">
-                   <ChatBubble type="user" text="J'ai une douleur persistante au genou gauche depuis 2 jours." />
-                   <ChatBubble type="ai" text="Je comprends. Cette douleur est-elle survenue après un effort physique ou un choc ? Avez-vous remarqué un gonflement ?" />
-                   <ChatBubble type="user" text="Oui, c'est gonflé après avoir couru." />
-                   <ChatBubble type="ai" text="Sur la base de vos symptômes, je vous suggère de consulter un Orthopédiste. Voulez-vous voir les spécialistes disponibles ?" />
+                   <ChatBubble type="user" text={t(language, 'chat1')} />
+                   <ChatBubble type="ai" text={t(language, 'chat2')} />
+                   <ChatBubble type="user" text={t(language, 'chat3')} />
+                   <ChatBubble type="ai" text={t(language, 'chat4')} />
                  </div>
               </div>
             </div>
@@ -267,16 +292,16 @@ export function LandingPage() {
       <section className="py-24">
         <div className="max-w-7xl mx-auto px-6 text-center space-y-12">
           <div className="max-w-3xl mx-auto space-y-6">
-            <h2 className="text-4xl font-black text-gray-900">Vous êtes un professionnel de santé ?</h2>
+            <h2 className="text-4xl font-black text-gray-900">{t(language, 'ctaTitle')}</h2>
             <p className="text-lg text-gray-600">
-              Rejoignez plus de 2,000 médecins et établissements qui utilisent DocNow pour gérer leurs rendez-vous et leur patientèle au quotidien.
+              {t(language, 'ctaDesc')}
             </p>
           </div>
           <div className="flex flex-wrap justify-center gap-6">
             <Link to={ROUTES.REGISTER_DOCTOR}>
-              <Button size="lg" className="bg-[#1D9E75] hover:bg-[#15805d] rounded-2xl px-10 h-16 font-bold text-xl shadow-xl shadow-emerald-100">
-                Inscrire mon cabinet
-                <ArrowRight size={24} className="ml-2" />
+              <Button size="lg" className="bg-[#1D9E75] hover:bg-[#15805d] text-white rounded-2xl px-10 h-16 font-bold text-xl shadow-xl shadow-emerald-100">
+                {t(language, 'ctaBtn')}
+                <ArrowRight size={24} className={language === 'ar' ? 'mr-2 rotate-180' : 'ml-2'} />
               </Button>
             </Link>
           </div>
@@ -289,27 +314,27 @@ export function LandingPage() {
           <div className="space-y-6">
             <Logo textClassName="text-white" />
             <p className="text-sm leading-relaxed">
-              La plateforme santé de référence pour les patients et les médecins en Algérie.
+              {t(language, 'footerDesc')}
             </p>
           </div>
           <div>
-            <h4 className="text-white font-bold mb-6 uppercase text-xs tracking-widest">Plateforme</h4>
+            <h4 className="text-white font-bold mb-6 uppercase text-xs tracking-widest">{t(language, 'footerCol1')}</h4>
             <ul className="space-y-4 text-sm">
-              <li><a href="#" className="hover:text-[#1D9E75] transition-colors">Trouver un médecin</a></li>
-              <li><a href="#" className="hover:text-[#1D9E75] transition-colors">Assistant IA</a></li>
-              <li><a href="#" className="hover:text-[#1D9E75] transition-colors">Prendre RDV</a></li>
+              <li><Link to={ROUTES.DOCTORS} className="hover:text-[#1D9E75] transition-colors">{t(language, 'heroSearchBtn')}</Link></li>
+              <li><a href="#ai" className="hover:text-[#1D9E75] transition-colors">{t(language, 'aiAssistant')}</a></li>
+              <li><a href="#" className="hover:text-[#1D9E75] transition-colors">{t(language, 'footerBook')}</a></li>
             </ul>
           </div>
           <div>
-            <h4 className="text-white font-bold mb-6 uppercase text-xs tracking-widest">Pour les pros</h4>
+            <h4 className="text-white font-bold mb-6 uppercase text-xs tracking-widest">{t(language, 'footerCol2')}</h4>
             <ul className="space-y-4 text-sm">
-              <li><Link to={ROUTES.REGISTER_DOCTOR} className="hover:text-[#1D9E75] transition-colors">Solution Cabinet</Link></li>
-              <li><Link to={ROUTES.REGISTER_CLINIC} className="hover:text-[#1D9E75] transition-colors">Solution Clinique</Link></li>
-              <li><a href="#" className="hover:text-[#1D9E75] transition-colors">Tarification</a></li>
+              <li><Link to={ROUTES.REGISTER_DOCTOR} className="hover:text-[#1D9E75] transition-colors">{t(language, 'footerCabinet')}</Link></li>
+              <li><Link to={ROUTES.REGISTER_CLINIC} className="hover:text-[#1D9E75] transition-colors">{t(language, 'footerClinic')}</Link></li>
+              <li><a href="#" className="hover:text-[#1D9E75] transition-colors">{t(language, 'footerPricing')}</a></li>
             </ul>
           </div>
           <div>
-            <h4 className="text-white font-bold mb-6 uppercase text-xs tracking-widest">Contact</h4>
+            <h4 className="text-white font-bold mb-6 uppercase text-xs tracking-widest">{t(language, 'footerCol3')}</h4>
             <ul className="space-y-4 text-sm">
               <li>contact@docnow.dz</li>
               <li>+213 (0) 555 00 00 00</li>
@@ -318,7 +343,7 @@ export function LandingPage() {
           </div>
         </div>
         <div className="max-w-7xl mx-auto border-t border-gray-800 mt-16 pt-8 text-center text-xs">
-          © 2026 DocNow. Tous droits réservés. Design premium par Antigravity.
+          {t(language, 'footerCopyright')}
         </div>
       </footer>
     </div>

@@ -15,6 +15,7 @@ import '../../../doctors/presentation/pages/doctor_details_page.dart';
 import '../../../notifications/presentation/bloc/notification_bloc.dart';
 import '../../../notifications/presentation/bloc/notification_state.dart';
 import '../../../notifications/presentation/pages/notifications_page.dart';
+import '../../../doctors/presentation/pages/all_categories_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -318,29 +319,50 @@ class _HomePageState extends State<HomePage> {
     final selectedCategory = state is HomeLoaded
         ? state.selectedCategory
         : 'All';
-    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Categories',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 19,
-            fontWeight: FontWeight.bold,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Medical Specialties',
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 19,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            GestureDetector(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AllCategoriesPage()),
+              ),
+              child: const Text(
+                'See All',
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 16),
-        isLandscape 
-          ? Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: _categories.map((cat) => _buildCategoryCardFromMap(context, cat, selectedCategory)).toList(),
-            )
-          : Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: _categories.map((cat) => _buildCategoryCardFromMap(context, cat, selectedCategory)).toList(),
-            ),
+        SizedBox(
+          height: 115,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            itemCount: _categories.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 16),
+            itemBuilder: (context, index) {
+              return _buildCategoryCardFromMap(context, _categories[index], selectedCategory);
+            },
+          ),
+        ),
       ],
     );
   }
@@ -375,38 +397,49 @@ class _HomePageState extends State<HomePage> {
           ),
         );
       },
-      child: Column(
-        children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: 70,
-            height: 70,
-            decoration: BoxDecoration(
-              color: isSelected ? color.withOpacity(0.2) : Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: isSelected ? Border.all(color: color, width: 2) : null,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+      child: Container(
+        width: 85,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: isSelected ? Border.all(color: color, width: 2) : Border.all(color: Colors.transparent, width: 2),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  shape: BoxShape.circle,
                 ),
-              ],
-            ),
-            child: Center(child: Icon(icon, color: color, size: 32)),
+                child: Center(child: Icon(icon, color: color, size: 26)),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: isSelected
-                  ? AppColors.textPrimary
-                  : AppColors.textSecondary,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

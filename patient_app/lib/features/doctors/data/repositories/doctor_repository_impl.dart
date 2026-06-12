@@ -26,6 +26,7 @@ class DoctorRepositoryImpl implements DoctorRepository {
     String? priceRange,
     String? distance,
   }) async {
+    List<Doctor> doctors = [];
     if (await networkInfo.isConnected) {
       try {
         final remoteDoctors = await remoteDataSource.getDoctors(
@@ -36,18 +37,25 @@ class DoctorRepositoryImpl implements DoctorRepository {
           distance: distance,
         );
         await localDataSource.cacheDoctors(remoteDoctors);
-        return Right(remoteDoctors);
+        doctors = remoteDoctors;
       } on ServerException {
         return Left(ServerFailure('Server error occurred'));
       }
     } else {
       try {
-        final localDoctors = await localDataSource.getCachedDoctors();
-        return Right(localDoctors);
+        doctors = await localDataSource.getCachedDoctors();
       } on CacheException {
         return Left(CacheFailure('No cached data available'));
       }
     }
+
+    if (specialty != null && specialty != 'All Doctors' && specialty != 'All') {
+      doctors = doctors
+          .where((doc) => doc.specialty.toLowerCase() == specialty.toLowerCase())
+          .toList();
+    }
+
+    return Right(doctors);
   }
 
   @override

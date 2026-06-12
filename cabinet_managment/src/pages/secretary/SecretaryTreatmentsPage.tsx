@@ -66,14 +66,14 @@ export function SecretaryTreatmentsPage() {
                     <StatCard label="Soldes impayés" value={`${(treatmentStats?.outstanding_balance ?? 0).toLocaleString('fr-DZ')} DA`} color="bg-orange-50 text-orange-700" />
                 </div>
 
-                <div className="bg-white border rounded-xl p-4 shadow-sm">
-                    <div className="flex items-center gap-2 mb-3">
+                <div className="bg-white rounded-2xl p-5 shadow-sm">
+                    <div className="flex items-center gap-2 mb-4">
                         <Filter size={16} className="text-gray-400" />
                         <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Filtres</span>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
                         <div className="md:col-span-7 relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                             <input
                                 type="text"
                                 placeholder="Rechercher patient ou traitement..."
@@ -82,7 +82,7 @@ export function SecretaryTreatmentsPage() {
                                     setSearch(e.target.value);
                                     setPage(1);
                                 }}
-                                className="w-full h-10 pl-9 pr-4 border border-gray-200 rounded-lg text-sm focus:border-[#1D9E75] focus:ring-1 focus:ring-[#1D9E75]/20"
+                                className="w-full h-11 pl-11 pr-4 bg-gray-50 text-gray-700 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-[#1D9E75]/20 outline-none transition-all placeholder:text-gray-400"
                             />
                         </div>
                         <div className="md:col-span-4">
@@ -92,7 +92,7 @@ export function SecretaryTreatmentsPage() {
                                     setStatus(e.target.value);
                                     setPage(1);
                                 }}
-                                className="w-full h-10 px-3 border border-gray-200 rounded-lg text-sm"
+                                className="w-full h-11 px-4 bg-gray-50 text-gray-700 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-[#1D9E75]/20 outline-none transition-all"
                             >
                                 <option value="">Tous les statuts</option>
                                 <option value="planned">Planifié</option>
@@ -104,14 +104,14 @@ export function SecretaryTreatmentsPage() {
                         <button
                             onClick={resetFilters}
                             disabled={!hasActiveFilters}
-                            className="md:col-span-1 h-10 flex items-center justify-center text-gray-500 border border-gray-200 rounded-lg disabled:opacity-40 hover:text-red-500"
+                            className="md:col-span-1 h-11 flex items-center justify-center bg-gray-50 text-gray-500 rounded-xl disabled:opacity-40 hover:bg-red-50 hover:text-red-500 transition-colors"
                         >
-                            <X size={16} />
+                            <X size={18} />
                         </button>
                     </div>
                 </div>
 
-                <div className="bg-white border rounded-xl shadow-sm overflow-hidden">
+                <div className="bg-white rounded-2xl shadow-sm overflow-hidden p-2">
                     {isLoading ? (
                         <p className="text-gray-400 text-sm py-12 text-center">Chargement...</p>
                     ) : treatments.length === 0 ? (
@@ -124,7 +124,7 @@ export function SecretaryTreatmentsPage() {
                             <div className="overflow-x-auto">
                                 <table className="w-full min-w-[900px] text-sm">
                                     <thead>
-                                        <tr className="text-left text-xs text-gray-400 uppercase tracking-wider border-b bg-gray-50/50">
+                                        <tr className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-100 bg-gray-50/30">
                                             <th className="px-4 py-3">Patient</th>
                                             <th className="px-4 py-3">Traitement</th>
                                             <th className="px-4 py-3">Médecin</th>
@@ -135,12 +135,12 @@ export function SecretaryTreatmentsPage() {
                                             <th className="px-4 py-3">Actions</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y">
+                                    <tbody className="divide-y divide-gray-50">
                                         {treatments.map((t) => {
                                             const statusCfg = STATUS_CONFIG[t.status];
                                             const progress = t.progress;
                                             return (
-                                                <tr key={t.id} className="hover:bg-[#f9fefd]">
+                                                <tr key={t.id} className="hover:bg-gray-50/50 transition-colors">
                                                     <td className="px-4 py-3 font-medium text-gray-900">
                                                         {t.patient?.name || `Patient #${t.patient_id}`}
                                                     </td>
@@ -186,22 +186,22 @@ export function SecretaryTreatmentsPage() {
                             </div>
 
                             {meta.last_page > 1 && (
-                                <div className="flex items-center justify-between px-4 py-3 border-t text-sm">
-                                    <span className="text-gray-500">
-                                        Page {meta.current_page} / {meta.last_page} ({meta.total} total)
+                                <div className="flex items-center justify-between px-4 py-4 border-t border-gray-100 text-sm">
+                                    <span className="text-gray-500 font-medium">
+                                        Page <span className="text-gray-800">{meta.current_page}</span> sur {meta.last_page} ({meta.total} total)
                                     </span>
                                     <div className="flex gap-2">
                                         <button
                                             disabled={page <= 1}
                                             onClick={() => setPage((p) => p - 1)}
-                                            className="px-3 py-1.5 border rounded-lg disabled:opacity-40"
+                                            className="px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 font-medium rounded-xl disabled:opacity-40 transition-colors"
                                         >
                                             Précédent
                                         </button>
                                         <button
                                             disabled={page >= meta.last_page}
                                             onClick={() => setPage((p) => p + 1)}
-                                            className="px-3 py-1.5 border rounded-lg disabled:opacity-40"
+                                            className="px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 font-medium rounded-xl disabled:opacity-40 transition-colors"
                                         >
                                             Suivant
                                         </button>

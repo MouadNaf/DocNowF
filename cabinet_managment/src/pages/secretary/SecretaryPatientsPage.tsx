@@ -11,15 +11,15 @@ export function SecretaryPatientsPage() {
 
   return (
     <SecretaryLayout title="Patients">
-      <div className="flex gap-2 mb-4">
+      <div className="flex flex-wrap gap-3 mb-6 bg-white p-4 rounded-2xl shadow-sm">
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="h-10 border rounded-lg px-3 flex-1 text-sm"
+          className="h-11 bg-gray-50 text-gray-700 rounded-xl px-4 flex-1 text-sm outline-none focus:ring-2 focus:ring-[#1D9E75]/20 transition-all placeholder:text-gray-400 min-w-[200px]"
           placeholder="Rechercher par nom ou téléphone..."
         />
         <button
-          className="h-10 px-4 bg-[#1D9E75] text-white rounded-lg text-sm font-medium"
+          className="h-11 px-6 bg-[#1D9E75] hover:bg-[#168260] text-white rounded-xl text-sm font-medium transition-all shadow-sm shadow-[#1D9E75]/20"
           onClick={() => navigate(ROUTES.SECRETARY_PATIENT_NEW)}
         >
           + Nouveau patient
@@ -35,24 +35,24 @@ export function SecretaryPatientsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
           {data.map((p) => (
-            <div key={p.id} className="bg-white border rounded-xl p-4 hover:shadow-md transition-shadow">
+            <div key={p.id} className="bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow group flex flex-col justify-between">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="font-semibold text-gray-800">{p.name ?? '—'}</p>
+                  <p className="font-semibold text-gray-800 text-lg">{p.name ?? '—'}</p>
                   <a
                     href={`tel:${p.phone}`}
-                    className="text-sm text-[#1D9E75] hover:underline"
+                    className="text-sm font-medium text-[#1D9E75] hover:underline"
                   >
                     {p.phone ?? '—'}
                   </a>
-                  {p.city && <p className="text-xs text-gray-400 mt-0.5">{p.city}</p>}
+                  {p.city && <p className="text-xs text-gray-400 mt-1">{p.city}</p>}
                 </div>
-                <span className="text-xs bg-indigo-50 text-indigo-600 px-2 py-1 rounded-full font-medium">
+                <span className="text-xs bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg font-medium shadow-sm">
                   {p.visits} visite{p.visits !== 1 ? 's' : ''}
                 </span>
               </div>
               <button
-                className="mt-3 text-sm text-gray-500 border rounded-lg px-3 py-1 hover:bg-gray-50 w-full"
+                className="mt-5 text-sm font-medium text-[#1D9E75] bg-[#1D9E75]/10 hover:bg-[#1D9E75]/20 rounded-xl px-4 py-2.5 w-full transition-colors"
                 onClick={() => navigate(`/secretary/patients/${p.id}`)}
               >
                 Voir le profil

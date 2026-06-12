@@ -26,7 +26,8 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (_) => sl<SearchBloc>()),
         BlocProvider(create: (_) => sl<AuthBloc>()),
         BlocProvider(
-          create: (_) => sl<NotificationBloc>()..add(const LoadNotificationsEvent()),
+          create: (_) =>
+              sl<NotificationBloc>()..add(const LoadNotificationsEvent()),
         ),
       ],
       child: MaterialApp(

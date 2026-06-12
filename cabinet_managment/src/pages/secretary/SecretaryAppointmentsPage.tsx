@@ -32,24 +32,24 @@ export function SecretaryAppointmentsPage() {
   return (
     <SecretaryLayout title="Rendez-vous">
       {/* Filters */}
-      <div className="bg-white border rounded-xl p-4 mb-4">
-        <div className="flex flex-wrap gap-2">
+      <div className="bg-white rounded-2xl p-5 mb-6 shadow-sm">
+        <div className="flex flex-wrap gap-3">
           <input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="h-10 border rounded-lg px-3 text-sm"
+            className="h-11 bg-gray-50 text-gray-700 rounded-xl px-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
           />
           <input
             value={patient}
             onChange={(e) => setPatient(e.target.value)}
             placeholder="Rechercher patient (nom ou tél)..."
-            className="h-10 border rounded-lg px-3 text-sm flex-1 min-w-48"
+            className="h-11 bg-gray-50 text-gray-700 rounded-xl px-4 text-sm flex-1 min-w-48 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-gray-400"
           />
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
-            className="h-10 border rounded-lg px-3 text-sm"
+            className="h-11 bg-gray-50 text-gray-700 rounded-xl px-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 transition-all appearance-none cursor-pointer"
           >
             <option value="">Tous les statuts</option>
             <option value="confirmed">Confirmé</option>
@@ -60,7 +60,7 @@ export function SecretaryAppointmentsPage() {
           {(date || patient || status) && (
             <button
               onClick={() => { setDate(''); setPatient(''); setStatus('') }}
-              className="h-10 px-4 border rounded-lg text-sm text-gray-500 hover:text-gray-700"
+              className="h-11 px-5 rounded-xl text-sm font-medium bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
             >
               Réinitialiser
             </button>
@@ -69,10 +69,10 @@ export function SecretaryAppointmentsPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white border rounded-xl p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-semibold text-gray-800">
-            {data.length} rendez-vous {date ? `— ${new Date(date + 'T00:00').toLocaleDateString('fr-FR')}` : ''}
+      <div className="bg-white rounded-2xl p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-semibold text-gray-800 text-lg">
+            {data.length} rendez-vous {date ? <span className="text-gray-400 font-normal ml-2">({new Date(date + 'T00:00').toLocaleDateString('fr-FR')})</span> : ''}
           </h2>
         </div>
 
@@ -84,32 +84,35 @@ export function SecretaryAppointmentsPage() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[700px] text-sm">
               <thead>
-                <tr className="text-left text-xs text-gray-500 border-b">
-                  <th className="py-2 px-3">Date & Heure</th>
-                  <th className="py-2 px-3">Patient</th>
-                  <th className="py-2 px-3">Téléphone</th>
-                  <th className="py-2 px-3">Statut</th>
-                  <th className="py-2 px-3">Actions</th>
+                <tr className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-100">
+                  <th className="py-3 px-4">Date & Heure</th>
+                  <th className="py-3 px-4">Patient</th>
+                  <th className="py-3 px-4">Téléphone</th>
+                  <th className="py-3 px-4">Statut</th>
+                  <th className="py-3 px-4">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {data.map((a) => (
-                  <tr key={a.id} className="border-b hover:bg-gray-50 transition-colors">
-                    <td className="py-2 px-3 font-medium">
-                      {a.date} <span className="text-gray-400">à</span> {a.time}
+                  <tr key={a.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                    <td className="py-3 px-4">
+                      <div className="font-medium text-gray-800">{a.date}</div>
+                      <div className="text-xs text-gray-400 mt-0.5">{a.time}</div>
                     </td>
-                    <td className="py-2 px-3">{a.name ?? '—'}</td>
-                    <td className="py-2 px-3 text-gray-500">{a.phone ?? '—'}</td>
-                    <td className="py-2 px-3">
-                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${STATUS_COLOR[a.status] ?? 'bg-gray-100 text-gray-600'}`}>
+                    <td className="py-3 px-4">
+                      <div className="font-medium text-gray-800">{a.name ?? '—'}</div>
+                    </td>
+                    <td className="py-3 px-4 text-gray-500">{a.phone ?? '—'}</td>
+                    <td className="py-3 px-4">
+                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${STATUS_COLOR[a.status] ?? 'bg-gray-100 text-gray-600'}`}>
                         {STATUS_LABEL[a.status] ?? a.status}
                       </span>
                     </td>
-                    <td className="py-2 px-3">
+                    <td className="py-3 px-4">
                       {a.status !== 'cancelled' && a.status !== 'completed' && (
                         <button
                           onClick={() => setCancelId(a.id)}
-                          className="text-xs text-red-500 hover:underline"
+                          className="text-xs font-medium text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors"
                         >
                           Annuler
                         </button>
@@ -125,24 +128,29 @@ export function SecretaryAppointmentsPage() {
 
       {/* Cancel Dialog */}
       {cancelId !== null && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-5 w-80 shadow-xl">
-            <h3 className="font-semibold mb-3">Confirmer l'annulation</h3>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity">
+          <div className="bg-white rounded-3xl p-6 w-[22rem] shadow-2xl">
+            <h3 className="font-semibold text-lg text-gray-800 mb-4">Confirmer l'annulation</h3>
             <textarea
-              className="w-full border rounded p-2 text-sm mb-3 h-20 resize-none"
-              placeholder="Motif (optionnel)"
+              className="w-full bg-gray-50 text-gray-700 rounded-xl p-4 text-sm mb-5 h-24 resize-none outline-none focus:ring-2 focus:ring-red-500/20 transition-all placeholder:text-gray-400"
+              placeholder="Motif de l'annulation (optionnel)"
               value={cancelReason}
               onChange={(e) => setCancelReason(e.target.value)}
             />
-            <div className="flex gap-2 justify-end">
-              <button onClick={() => setCancelId(null)} className="px-4 py-2 text-sm border rounded-lg">Retour</button>
+            <div className="flex gap-3 justify-end">
+              <button 
+                onClick={() => setCancelId(null)} 
+                className="px-5 py-2.5 text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-xl transition-colors"
+              >
+                Retour
+              </button>
               <button
                 onClick={() => {
                   cancel.mutate({ id: cancelId, reason: cancelReason })
                   setCancelId(null)
                   setCancelReason('')
                 }}
-                className="px-4 py-2 text-sm bg-red-500 text-white rounded-lg"
+                className="px-5 py-2.5 text-sm font-medium bg-red-500 hover:bg-red-600 text-white rounded-xl transition-all shadow-sm shadow-red-500/20"
               >
                 Annuler le RDV
               </button>

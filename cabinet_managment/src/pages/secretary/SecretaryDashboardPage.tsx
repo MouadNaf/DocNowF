@@ -8,6 +8,7 @@ import {
   useMarkAsPaid,
   useSaveNote,
 } from '@/hooks/useSecretary'
+import { RescheduleModal } from '@/components/secretary/RescheduleModal'
 import type { SecretaryAppointment } from '@/types/secretary'
 
 const STATUS_LABEL: Record<string, string> = {
@@ -30,7 +31,7 @@ const STATUS_COLOR: Record<string, string> = {
 export function SecretaryDashboardPage() {
   const { data: appointments = [], isLoading } = useTodaySchedule()
   const [selectedId, setSelectedId] = useState<number | null>(null)
-  const [modal, setModal] = useState<'cancel' | 'pay' | 'note' | null>(null)
+  const [modal, setModal] = useState<'cancel' | 'pay' | 'note' | 'reschedule' | null>(null)
 
   const confirmed = appointments.filter((a) => a.status === 'confirmed').length
   const arrived = appointments.filter((a) => a.status === 'arrived').length
@@ -42,15 +43,15 @@ export function SecretaryDashboardPage() {
   return (
     <SecretaryLayout title="Tableau de bord">
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-        <StatCard label="Total aujourd'hui" value={appointments.length} color="bg-white border text-gray-800" />
-        <StatCard label="Confirmés" value={confirmed} color="bg-blue-50 text-blue-700" />
-        <StatCard label="Arrivés" value={arrived} color="bg-indigo-50 text-indigo-700" />
-        <StatCard label="Annulés" value={cancelled} color="bg-red-50 text-red-600" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <StatCard label="Total aujourd'hui" value={appointments.length} color="bg-white text-gray-800" />
+        <StatCard label="Confirmés" value={confirmed} color="bg-blue-50/50 text-blue-700" />
+        <StatCard label="Arrivés" value={arrived} color="bg-indigo-50/50 text-indigo-700" />
+        <StatCard label="Annulés" value={cancelled} color="bg-red-50/50 text-red-600" />
       </div>
 
       {/* Schedule Table */}
-      <div className="bg-white border rounded-xl p-4 shadow-sm">
+      <div className="bg-white rounded-2xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold text-gray-800">
             Planning du jour — {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
@@ -70,22 +71,22 @@ export function SecretaryDashboardPage() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[800px] text-sm">
               <thead>
-                <tr className="text-left text-xs text-gray-400 uppercase tracking-wider border-b">
-                  <th className="py-3 px-3">Heure</th>
-                  <th className="py-3 px-3">Patient</th>
-                  <th className="py-3 px-3">Statut</th>
-                  <th className="py-3 px-3">Paiement</th>
-                  <th className="py-3 px-3 text-right">Actions</th>
+                <tr className="text-left text-[10px] text-gray-400 uppercase tracking-widest border-b border-gray-100">
+                  <th className="py-4 px-4 font-bold">Heure</th>
+                  <th className="py-4 px-4 font-bold">Patient</th>
+                  <th className="py-4 px-4 font-bold">Statut</th>
+                  <th className="py-4 px-4 font-bold">Paiement</th>
+                  <th className="py-4 px-4 font-bold text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y">
+              <tbody className="divide-y divide-gray-50">
                 {appointments.map((a) => (
                   <AppointmentRow
                     key={a.id}
                     a={a}
                     onAction={(type) => {
                       setSelectedId(a.id)
-                      if (type === 'cancel' || type === 'pay' || type === 'note') {
+                      if (type === 'cancel' || type === 'pay' || type === 'note' || type === 'reschedule') {
                         setModal(type)
                       }
                     }}
@@ -107,6 +108,12 @@ export function SecretaryDashboardPage() {
       {modal === 'note' && selectedApt && (
         <NoteDialog apt={selectedApt} onClose={() => setModal(null)} />
       )}
+      {modal === 'reschedule' && selectedApt && (
+        <RescheduleModal
+          id={selectedApt.id.toString()}
+          onClose={() => setModal(null)}
+        />
+      )}
     </SecretaryLayout>
   )
 }
@@ -116,23 +123,23 @@ function AppointmentRow({ a, onAction }: { a: SecretaryAppointment; onAction: (t
   const noshow = useMarkAsNoShow()
 
   return (
-    <tr className="hover:bg-gray-50 transition-colors group">
-      <td className="py-4 px-3 font-semibold text-gray-700">{a.time}</td>
-      <td className="py-4 px-3">
+    <tr className="hover:bg-gray-50/50 transition-colors group">
+      <td className="py-4 px-4 font-bold text-gray-800">{a.time}</td>
+      <td className="py-4 px-4">
         <div className="flex flex-col">
-           <span className="font-medium text-gray-900">{a.name ?? '—'}</span>
-           <span className="text-xs text-gray-500">{a.phone ?? '—'}</span>
+           <span className="font-bold text-gray-900">{a.name ?? '—'}</span>
+           <span className="text-xs font-medium text-gray-400 mt-0.5">{a.phone ?? '—'}</span>
         </div>
       </td>
-      <td className="py-4 px-3">
-        <span className={`text-[10px] uppercase px-2 py-1 rounded-full font-bold tracking-tight ${STATUS_COLOR[a.status] ?? 'bg-gray-100 text-gray-600'}`}>
+      <td className="py-4 px-4">
+        <span className={`text-[10px] uppercase px-2.5 py-1 rounded-md font-bold tracking-wider ${STATUS_COLOR[a.status] ?? 'bg-gray-50 text-gray-600'}`}>
           {STATUS_LABEL[a.status] ?? a.status}
         </span>
         {a.arrived_at && (
-           <p className="text-[10px] text-gray-400 mt-1">Arrivé à {new Date(a.arrived_at).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})}</p>
+           <p className="text-[10px] font-medium text-gray-400 mt-1.5">Arrivé à {new Date(a.arrived_at).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})}</p>
         )}
       </td>
-      <td className="py-4 px-3">
+      <td className="py-4 px-4">
         {a.payment_status === 'paid' ? (
            <div className="flex items-center gap-1 text-green-600 font-medium">
               <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
@@ -145,21 +152,15 @@ function AppointmentRow({ a, onAction }: { a: SecretaryAppointment; onAction: (t
            </div>
         )}
       </td>
-      <td className="py-4 px-3 text-right">
+      <td className="py-4 px-4 text-right">
         <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
           {a.status === 'confirmed' && (
             <>
               <button 
-                onClick={() => arrived.mutate(a.id)}
-                className="h-8 px-3 rounded-lg bg-indigo-50 text-indigo-600 text-xs font-semibold hover:bg-indigo-100"
+                onClick={() => onAction('reschedule')}
+                className="h-8 px-3 rounded-lg bg-sky-50 text-sky-600 text-xs font-semibold hover:bg-sky-100"
               >
-                Arrivé
-              </button>
-              <button 
-                onClick={() => noshow.mutate(a.id)}
-                className="h-8 px-3 rounded-lg bg-orange-50 text-orange-600 text-xs font-semibold hover:bg-orange-100"
-              >
-                Absent
+                Replanifier
               </button>
             </>
           )}
@@ -195,9 +196,9 @@ function AppointmentRow({ a, onAction }: { a: SecretaryAppointment; onAction: (t
 
 function StatCard({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <div className={`rounded-xl p-4 shadow-sm ${color}`}>
-      <p className="text-3xl font-black">{value}</p>
-      <p className="text-xs mt-1 font-medium opacity-70 uppercase tracking-wide">{label}</p>
+    <div className={`rounded-2xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 ${color}`}>
+      <p className="text-4xl font-black tracking-tight">{value}</p>
+      <p className="text-[11px] mt-2 font-bold opacity-80 uppercase tracking-widest">{label}</p>
     </div>
   )
 }

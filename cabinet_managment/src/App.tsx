@@ -46,6 +46,10 @@ import { PatientDashboardPage } from '@/pages/patient/PatientDashboardPage'
 import { PatientAppointmentsPage } from '@/pages/patient/PatientAppointmentsPage'
 import { usePreferencesStore } from '@/store/preferences.store'
 import { t } from '@/lib/i18n'
+import { DoctorLayout } from '@/widgets/layout/DoctorLayout'
+import { PublicLayout } from '@/widgets/layout/PublicLayout'
+import { DoctorsSearchPage } from '@/pages/public/DoctorsSearchPage'
+import { useAuthStore } from '@/store/auth.store'
 
 import { NotificationsPage } from '@/pages/notifications/NotificationsPage'
 
@@ -63,12 +67,27 @@ const NotFound = () => {
   )
 }
 
+function DoctorsSearchRouteWrapper() {
+  const { user } = useAuthStore()
+  if (user?.role === 'patient') {
+    return <PatientLayout><DoctorsSearchPage /></PatientLayout>
+  }
+  if (user?.role === 'doctor') {
+    return <DoctorLayout><DoctorsSearchPage /></DoctorLayout>
+  }
+  if (user?.role === 'admin') {
+    return <AdminLayout><DoctorsSearchPage /></AdminLayout>
+  }
+  return <PublicLayout><DoctorsSearchPage /></PublicLayout>
+}
+
 export default function App() {
   return (
     <>
       <Routes>
         {/* Public Routes */}
         <Route path={ROUTES.LANDING} element={<LandingPage />} />
+        <Route path={ROUTES.DOCTORS} element={<DoctorsSearchRouteWrapper />} />
         
         {/* Auth Routes */}
         <Route path={ROUTES.LOGIN} element={<GuestRoute><LoginPage /></GuestRoute>} />
@@ -122,7 +141,7 @@ export default function App() {
         <Route path={ROUTES.PATIENT_APPOINTMENTS} element={<ProtectedRoute><PatientLayout><PatientAppointmentsPage /></PatientLayout></ProtectedRoute>} />
         <Route path={ROUTES.PATIENT_FAVORITES} element={<ProtectedRoute><PatientLayout><ComingSoon label="Mes Favoris" /></PatientLayout></ProtectedRoute>} />
         <Route path={ROUTES.PATIENT_RECORDS} element={<ProtectedRoute><PatientLayout><ComingSoon label="Dossiers Médicaux" /></PatientLayout></ProtectedRoute>} />
-        <Route path={ROUTES.PATIENT_NOTIFICATIONS} element={<ProtectedRoute><PatientLayout><ComingSoon label="Notifications" /></PatientLayout></ProtectedRoute>} />
+        <Route path={ROUTES.PATIENT_NOTIFICATIONS} element={<ProtectedRoute><PatientLayout><NotificationsPage /></PatientLayout></ProtectedRoute>} />
         <Route path={ROUTES.PATIENT_PROFILE} element={<ProtectedRoute><PatientLayout><ComingSoon label="Profil" /></PatientLayout></ProtectedRoute>} />
 
         {/* Misc */}

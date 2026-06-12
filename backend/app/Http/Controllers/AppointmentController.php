@@ -259,11 +259,16 @@ $slots = array_values($slots);
     // 🔹 Identify patient
     if (Auth::user()->role === 'patient') {
         $patientId = Auth::user()->patient->id;
-    } else {
-        if (!$request->patient_id) {
-            return response()->json(['message' => 'patient_id required'], 400);
-        }
+    } elseif ($request->patient_id) {
+        // Secretary / admin providing a specific patient_id
         $patientId = $request->patient_id;
+    } else {
+        // Doctor or other role booking for themselves:
+        // auto-create or find a patient record linked to this user
+        $patient = \App\Models\Patient::firstOrCreate(
+            ['user_id' => Auth::id()]
+        );
+        $patientId = $patient->id;
     }
 
     // 🔹 Validate slot using your slot generator
@@ -418,6 +423,59 @@ public function cancel(Request $request, $appointmentId)
     return response()->json([
         'success' => true,
         'message' => 'Appointment cancelled successfully'
+    ]);
+}
+
+
+public function reschedule(Request $request, $appointmentId)
+{
+    $request->validate([
+        'appointment_date' => 'required|date',
+        'start_time' => 'required|date_format:H:i',
+    ]);
+
+    $user = Auth::user();
+    $appointment = Appointment::find($appointmentId);
+
+    if (!$appointment) {
+        return response()->json(['message' => 'Appointment not found'], 404);
+    }
+
+    // 🔹 Doctor can reschedule his own appointments
+    if ($user->role === 'doctor') {
+        if ($appointment->doctor_id !== $user->doctor->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+    }
+    // 🔹 Patient can reschedule his own appointments
+    elseif ($user->role === 'patient') {
+        if ($appointment->patient_id !== $user->patient->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+    }
+    // 🔥 Secretary can reschedule ONLY doctor’s appointments
+    elseif ($user->role === 'secretary') {
+        if ($appointment->doctor_id !== $user->secretary->doctor_id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+    }
+
+    $oldDate = $appointment->appointment_date;
+    $oldTime = \Carbon\Carbon::parse($appointment->start_time)->format('H:i');
+
+    $appointment->update([
+        'appointment_date' => $request->appointment_date,
+        'start_time' => $request->start_time,
+        'status' => 'confirmed'
+    ]);
+
+    // 🔔 Notify doctor, secretary, and patient
+    NotificationService::appointmentRescheduled($appointment, $oldDate, $oldTime);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Appointment rescheduled successfully',
+        'data' => $appointment
     ]);
 }
 

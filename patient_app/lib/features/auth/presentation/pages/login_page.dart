@@ -131,11 +131,7 @@ class _LoginPageState extends State<LoginPage> {
                                   width: 1,
                                 ),
                               ),
-                              child: const Icon(
-                                Icons.medical_services_rounded,
-                                color: Colors.white,
-                                size: 26,
-                              ),
+                              child: Image.asset('web/launcher_icon.png', width: 48, height: 48),
                             ),
                             const SizedBox(width: 10),
                             const Text(

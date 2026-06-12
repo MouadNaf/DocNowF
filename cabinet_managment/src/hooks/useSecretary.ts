@@ -80,6 +80,18 @@ export function useCancelAppointment() {
   })
 }
 
+export function useRescheduleAppointment() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, datetime }: { id: string; datetime: string }) =>
+      secretaryApi.rescheduleAppointment(id, datetime),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['secretary'] })
+      qc.invalidateQueries({ queryKey: ['notifications'] })
+    },
+  })
+}
+
 export function useMarkAsPaid() {
   const qc = useQueryClient()
   return useMutation({

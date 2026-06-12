@@ -63,8 +63,7 @@ class _RegisterPageState extends State<RegisterPage> {
     );
     if (picked != null) {
       setState(() {
-        _dobController.text =
-            "${picked.day}/${picked.month}/${picked.year}";
+        _dobController.text = "${picked.day}/${picked.month}/${picked.year}";
       });
     }
   }
@@ -89,7 +88,8 @@ class _RegisterPageState extends State<RegisterPage> {
               backgroundColor: Colors.red.shade600,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           );
         }
@@ -109,10 +109,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFF2EAA8A),
-                      Color(0xFF1E8A6E),
-                    ],
+                    colors: [Color(0xFF2EAA8A), Color(0xFF1E8A6E)],
                   ),
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(36),
@@ -162,37 +159,28 @@ class _RegisterPageState extends State<RegisterPage> {
 
                         // Logo + App Name
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              width: 44,
-                              height: 44,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.25),
-                                borderRadius: BorderRadius.circular(13),
-                                border: Border.all(
-                                  color: Colors.white.withOpacity(0.4),
-                                  width: 1,
-                                ),
-                              ),
-                              child: const Icon(
-                                Icons.medical_services_rounded,
-                                color: Colors.white,
-                                size: 22,
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            const Text(
-                              'DocNow',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 26,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 0.3,
-                              ),
-                            ),
-                          ],
-                        ),
+  mainAxisAlignment: MainAxisAlignment.center,
+  children: [
+    Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.25),
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.4),
+          width: 1,
+        ),
+      ),
+      child: Image.asset(
+        'web/launcher_icon.png',
+        width: 44,
+        height: 44,
+        fit: BoxFit.contain,
+      ),
+    ),
+  ],
+),
 
                         SizedBox(height: isLandscape ? 10 : 18),
 
@@ -348,8 +336,10 @@ class _RegisterPageState extends State<RegisterPage> {
                                           isPassword: true,
                                           obscureText: _obscurePassword,
                                           onTogglePassword: () {
-                                            setState(() => _obscurePassword =
-                                                !_obscurePassword);
+                                            setState(
+                                              () => _obscurePassword =
+                                                  !_obscurePassword,
+                                            );
                                           },
                                         ),
                                       ],
@@ -370,9 +360,10 @@ class _RegisterPageState extends State<RegisterPage> {
                                           isPassword: true,
                                           obscureText: _obscureConfirmPassword,
                                           onTogglePassword: () {
-                                            setState(() =>
-                                                _obscureConfirmPassword =
-                                                    !_obscureConfirmPassword);
+                                            setState(
+                                              () => _obscureConfirmPassword =
+                                                  !_obscureConfirmPassword,
+                                            );
                                           },
                                         ),
                                       ],
@@ -401,7 +392,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                   ),
                                   const Padding(
                                     padding: EdgeInsets.symmetric(
-                                        horizontal: 16),
+                                      horizontal: 16,
+                                    ),
                                     child: Text(
                                       'Or',
                                       style: TextStyle(
@@ -516,16 +508,10 @@ class _RegisterPageState extends State<RegisterPage> {
       readOnly: readOnly,
       onTap: onTap,
       keyboardType: keyboardType,
-      style: const TextStyle(
-        color: AppColors.textPrimary,
-        fontSize: 13,
-      ),
+      style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(
-          color: AppColors.textHint,
-          fontSize: 13,
-        ),
+        hintStyle: const TextStyle(color: AppColors.textHint, fontSize: 13),
         prefixIcon: Icon(icon, color: AppColors.textSecondary, size: 18),
         suffixIcon: isPassword
             ? IconButton(
@@ -565,8 +551,11 @@ class _RegisterPageState extends State<RegisterPage> {
     return DropdownButtonFormField<String>(
       value: _selectedGender,
       dropdownColor: AppColors.white,
-      icon: const Icon(Icons.keyboard_arrow_down,
-          color: AppColors.textSecondary, size: 18),
+      icon: const Icon(
+        Icons.keyboard_arrow_down,
+        color: AppColors.textSecondary,
+        size: 18,
+      ),
       style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
       hint: const Text(
         'Select',
@@ -575,8 +564,11 @@ class _RegisterPageState extends State<RegisterPage> {
       decoration: InputDecoration(
         filled: true,
         fillColor: AppColors.inputBackground,
-        prefixIcon: const Icon(Icons.person_pin_outlined,
-            color: AppColors.textSecondary, size: 18),
+        prefixIcon: const Icon(
+          Icons.person_pin_outlined,
+          color: AppColors.textSecondary,
+          size: 18,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppColors.border, width: 1),
@@ -594,12 +586,14 @@ class _RegisterPageState extends State<RegisterPage> {
           horizontal: 12,
         ),
       ),
-      items: ['Male', 'Female', 'Other']
+      items: ['Male', 'Female']
           .map(
             (gender) => DropdownMenuItem(
               value: gender,
-              child: Text(gender,
-                  style: const TextStyle(color: AppColors.textPrimary)),
+              child: Text(
+                gender,
+                style: const TextStyle(color: AppColors.textPrimary),
+              ),
             ),
           )
           .toList(),
@@ -618,8 +612,7 @@ class _RegisterPageState extends State<RegisterPage> {
           height: 22,
           child: Checkbox(
             value: _agreeToTerms,
-            onChanged: (value) =>
-                setState(() => _agreeToTerms = value!),
+            onChanged: (value) => setState(() => _agreeToTerms = value!),
             activeColor: AppColors.primary,
             checkColor: Colors.white,
             side: const BorderSide(color: AppColors.border, width: 1.5),
@@ -677,21 +670,20 @@ class _RegisterPageState extends State<RegisterPage> {
                     }
 
                     context.read<AuthBloc>().add(
-                          RegisterRequested({
-                            'name': _nameController.text,
-                            'email': _emailController.text,
-                            'password': _passwordController.text,
-                            'password_confirmation':
-                                _confirmPasswordController.text,
-                            'role': 'patient',
-                            'gender':
-                                _selectedGender?.toLowerCase() ?? 'male',
-                            'city': _cityController.text,
-                            'address': _addressController.text,
-                            'date_of_birth': formattedDate,
-                            'phone_number': _phoneController.text,
-                          }),
-                        );
+                      RegisterRequested({
+                        'name': _nameController.text,
+                        'email': _emailController.text,
+                        'password': _passwordController.text,
+                        'password_confirmation':
+                            _confirmPasswordController.text,
+                        'role': 'patient',
+                        'gender': _selectedGender?.toLowerCase() ?? 'male',
+                        'city': _cityController.text,
+                        'address': _addressController.text,
+                        'date_of_birth': formattedDate,
+                        'phone_number': _phoneController.text,
+                      }),
+                    );
                   }
                 : null,
             style: ElevatedButton.styleFrom(

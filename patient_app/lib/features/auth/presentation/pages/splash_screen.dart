@@ -148,11 +148,7 @@ class _SplashScreenState extends State<SplashScreen>
                             ),
                           ],
                         ),
-                        child: const Icon(
-                          Icons.medical_services_rounded,
-                          color: Colors.white,
-                          size: 56,
-                        ),
+                        child: Image.asset('web/launcher_icon.png', width: 56, height: 56),
                       ),
                     ),
                   ),

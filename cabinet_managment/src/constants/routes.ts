@@ -1,5 +1,6 @@
 export const ROUTES = {
   LANDING: '/',
+  DOCTORS: '/doctors',
   LOGIN: '/login',
   FORGOT_PASSWORD: '/forgot-password',
   RESET_PASSWORD: '/reset-password',

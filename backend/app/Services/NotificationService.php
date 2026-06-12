@@ -139,4 +139,63 @@ class NotificationService
             );
         }
     }
+
+    /**
+     * Notify all parties when an appointment is rescheduled.
+     */
+    public static function appointmentRescheduled(Appointment $appointment, string $oldDate = '', string $oldTime = ''): void
+    {
+        $appointment->load(['doctor.user', 'doctor.secretaries.user', 'patient.user']);
+
+        $doctor  = $appointment->doctor;
+        $patient = $appointment->patient;
+
+        $dateFormatted = \Carbon\Carbon::parse($appointment->appointment_date)
+            ->locale('fr')
+            ->translatedFormat('l d F Y');
+        $time = \Carbon\Carbon::parse($appointment->start_time)->format('H:i');
+        
+        $oldDateFormatted = $oldDate ? \Carbon\Carbon::parse($oldDate)->locale('fr')->translatedFormat('l d F Y') : '';
+        $oldText = ($oldDateFormatted && $oldTime) ? " (précédemment le {$oldDateFormatted} à {$oldTime})" : '';
+
+        // ── Notify Doctor ──────────────────────────────────────────────────
+        if ($doctor?->user) {
+            self::send(
+                $doctor->user->id,
+                'Rendez-vous replanifié',
+                "Le rendez-vous" . ($patient?->user ? " avec {$patient->user->name}" : '') . 
+                    " a été replanifié pour le {$dateFormatted} à {$time}{$oldText}.",
+                'appointment',
+                ['appointment_id' => $appointment->id]
+            );
+        }
+
+        // ── Notify Secretary ───────────────────────────────────────────────
+        if ($doctor) {
+            foreach ($doctor->secretaries as $secretary) {
+                if ($secretary->user) {
+                    self::send(
+                        $secretary->user->id,
+                        'Rendez-vous replanifié',
+                        "Le rendez-vous" . ($patient?->user ? " pour {$patient->user->name}" : '') . 
+                            " a été replanifié pour le {$dateFormatted} à {$time}{$oldText}.",
+                        'appointment',
+                        ['appointment_id' => $appointment->id]
+                    );
+                }
+            }
+        }
+
+        // ── Notify Patient ─────────────────────────────────────────────────
+        if ($patient?->user) {
+            self::send(
+                $patient->user->id,
+                'Rendez-vous replanifié',
+                "Votre rendez-vous" . ($doctor?->user ? " avec Dr. {$doctor->user->name}" : '') . 
+                    " a été replanifié pour le {$dateFormatted} à {$time}{$oldText}.",
+                'appointment',
+                ['appointment_id' => $appointment->id]
+            );
+        }
+    }
 }

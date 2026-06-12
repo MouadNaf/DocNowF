@@ -25,6 +25,9 @@ use App\Http\Controllers\SecretaryTreatmentController;
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
+Route::get('/doctors', [\App\Http\Controllers\PublicDoctorController::class, 'index']);
+Route::get('/appointments/slots/{doctorId}/{date}/{cabinetType}/{cabinetId}', [\App\Http\Controllers\AppointmentController::class, 'generateSlots']);
+
 
 /*
 |--------------------------------------------------------------------------
@@ -35,7 +38,6 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/logout', [AuthController::class, 'logout']);
-    Route::get('/doctors', [\App\Http\Controllers\PublicDoctorController::class, 'index']);
 
     // ── AI Chatbot ──────────────────────────────────────────────
     Route::post('/chat', [ChatController::class, 'chat']);
@@ -81,9 +83,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::post('/', [AppointmentController::class, 'store']);
         Route::get('/my', [AppointmentController::class, 'index']);
-        Route::get('/slots/{doctorId}/{date}/{cabinetType}/{cabinetId}',
-            [AppointmentController::class, 'generateSlots']
-        );
         Route::get('/walk-in-slots', [DashboardController::class, 'availableSlots']);
         Route::post('/walk-in', [DashboardController::class, 'walkIn']);
         Route::get('/dashboard/doc', [AppointmentController::class, 'getDoctorDashboard']);
@@ -91,6 +90,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // Wildcard routes must be at the bottom
         Route::get('/{appointment}', [AppointmentController::class, 'show']);
         Route::put('/{appointment}', [AppointmentController::class, 'cancel']);
+        Route::put('/{appointment}/reschedule', [AppointmentController::class, 'reschedule']);
     });
 
     // Doctor Dashboard & Consultation (Specific Logic)

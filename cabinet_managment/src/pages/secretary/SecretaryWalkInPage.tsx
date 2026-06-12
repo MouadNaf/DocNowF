@@ -121,11 +121,11 @@ export function SecretaryWalkInPage() {
     <SecretaryLayout title="Nouveau Rendez-vous">
       <div className="max-w-3xl space-y-6">
         
-        <div className="bg-white border rounded-2xl shadow-sm overflow-hidden">
+        <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
           {/* Header Section */}
-          <div className="bg-[#F9FEFD] border-b px-6 py-4">
-            <h3 className="text-lg font-bold text-gray-800">Détails de l'admission</h3>
-            <p className="text-xs text-gray-500">Remplissez les informations pour valider le rendez-vous.</p>
+          <div className="bg-[#F9FEFD] px-8 py-5 border-b border-gray-50">
+            <h3 className="text-xl font-bold text-gray-800">Détails de l'admission</h3>
+            <p className="text-sm text-gray-500 mt-1">Remplissez les informations pour valider le rendez-vous.</p>
           </div>
 
           <div className="p-6 space-y-8">
@@ -139,18 +139,18 @@ export function SecretaryWalkInPage() {
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-gray-500 ml-1">Date</label>
                   <div className="relative">
-                    <Calendar className="absolute left-3 top-3 text-gray-400" size={18} />
+                    <Calendar className="absolute left-4 top-3.5 text-gray-400" size={18} />
                     <input 
                       type="date" 
                       value={date}
                       onChange={(e) => setDate(e.target.value)}
-                      className="w-full h-12 pl-10 pr-4 border rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#1D9E75]/10 focus:border-[#1D9E75] transition-all text-sm"
+                      className="w-full h-12 pl-11 pr-4 bg-gray-50 text-gray-700 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#1D9E75]/20 outline-none transition-all text-sm font-medium"
                     />
                   </div>
                 </div>
                 <div className="space-y-3 col-span-2">
                   <label className="text-xs font-medium text-gray-500 ml-1">Heure du rendez-vous</label>
-                  <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                  <div className="bg-gray-50/50 p-5 rounded-2xl">
 
                     {/* Available count badge */}
                     {!isLoadingSlots && !slotsError && allSlots.length > 0 && (
@@ -218,10 +218,10 @@ export function SecretaryWalkInPage() {
                             onClick={() => slot.is_available && setTime(slot.start)}
                             className={`py-2 px-3 text-sm rounded-xl font-medium transition-all duration-200 flex flex-col items-center justify-center gap-1 ${
                               !slot.is_available
-                                ? 'bg-gray-100 text-gray-300 border border-gray-200 cursor-not-allowed opacity-50'
+                                ? 'bg-gray-100/50 text-gray-300 cursor-not-allowed opacity-50'
                                 : time === slot.start
-                                ? 'bg-[#1D9E75] text-white shadow-md shadow-[#1D9E75]/30 border-transparent transform scale-105'
-                                : 'bg-white text-gray-700 border border-gray-200 hover:border-[#1D9E75] hover:text-[#1D9E75] hover:shadow-sm'
+                                ? 'bg-[#1D9E75] text-white shadow-md shadow-[#1D9E75]/30 transform scale-105'
+                                : 'bg-white text-gray-700 shadow-sm hover:shadow-md hover:text-[#1D9E75]'
                             }`}
                           >
                             <span>{slot.start}</span>
@@ -255,7 +255,7 @@ export function SecretaryWalkInPage() {
                     placeholder="Rechercher un patient par nom ou téléphone..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full h-14 pl-12 pr-4 border-2 border-gray-100 rounded-2xl focus:border-[#1D9E75] focus:ring-0 text-base shadow-sm transition-all"
+                    className="w-full h-14 pl-12 pr-4 bg-gray-50 text-gray-700 rounded-2xl focus:bg-white focus:ring-2 focus:ring-[#1D9E75]/20 outline-none text-base transition-all placeholder:text-gray-400"
                   />
                   
                   {searchQuery.length >= 2 && (
@@ -327,7 +327,7 @@ export function SecretaryWalkInPage() {
 
             {/* 3. New Patient Form Expansion */}
             {isAddingNew && (
-              <section className="space-y-4 pt-4 border-t animate-in fade-in slide-in-from-top-4 duration-500">
+              <section className="space-y-4 pt-6 border-t border-gray-50 animate-in fade-in slide-in-from-top-4 duration-500">
                 <div className="flex items-center gap-2 text-[#1D9E75] font-bold text-sm uppercase tracking-wider">
                   <UserPlus size={16} />
                   <span>3. Nouveau Profil Patient</span>
@@ -338,7 +338,7 @@ export function SecretaryWalkInPage() {
                     <input 
                       value={newName}
                       onChange={(e) => setNewName(e.target.value)}
-                      className="w-full h-11 border rounded-xl px-4 text-sm focus:ring-2 focus:ring-[#1D9E75]/10 focus:border-[#1D9E75] transition-all"
+                      className="w-full h-12 bg-gray-50 text-gray-700 rounded-xl px-4 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#1D9E75]/20 transition-all placeholder:text-gray-400"
                       placeholder="Nom et Prénom"
                     />
                   </div>
@@ -347,7 +347,7 @@ export function SecretaryWalkInPage() {
                     <input 
                       value={newPhone}
                       onChange={(e) => setNewPhone(e.target.value)}
-                      className="w-full h-11 border rounded-xl px-4 text-sm focus:ring-2 focus:ring-[#1D9E75]/10 focus:border-[#1D9E75] transition-all"
+                      className="w-full h-12 bg-gray-50 text-gray-700 rounded-xl px-4 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#1D9E75]/20 transition-all placeholder:text-gray-400"
                       placeholder="Numéro de mobile"
                     />
                   </div>
@@ -356,7 +356,7 @@ export function SecretaryWalkInPage() {
                     <input 
                       value={newEmail}
                       onChange={(e) => setNewEmail(e.target.value)}
-                      className="w-full h-11 border rounded-xl px-4 text-sm focus:ring-2 focus:ring-[#1D9E75]/10 focus:border-[#1D9E75] transition-all"
+                      className="w-full h-12 bg-gray-50 text-gray-700 rounded-xl px-4 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#1D9E75]/20 transition-all placeholder:text-gray-400"
                       placeholder="exemple@mail.com"
                     />
                   </div>
@@ -365,7 +365,7 @@ export function SecretaryWalkInPage() {
                     <select 
                       value={newGender}
                       onChange={(e) => setNewGender(e.target.value as any)}
-                      className="w-full h-11 border rounded-xl px-4 text-sm focus:ring-2 focus:ring-[#1D9E75]/10 focus:border-[#1D9E75] transition-all"
+                      className="w-full h-12 bg-gray-50 text-gray-700 rounded-xl px-4 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#1D9E75]/20 transition-all"
                     >
                       <option value="">Non spécifié</option>
                       <option value="male">Homme</option>
@@ -375,11 +375,11 @@ export function SecretaryWalkInPage() {
                   <div className="col-span-2 space-y-1">
                     <label className="text-xs font-medium text-gray-500 ml-1">Ville / Adresse</label>
                     <div className="relative">
-                      <MapPin className="absolute left-3 top-3 text-gray-400" size={18} />
+                      <MapPin className="absolute left-3 top-3.5 text-gray-400" size={18} />
                       <input 
                         value={newCity}
                         onChange={(e) => setNewCity(e.target.value)}
-                        className="w-full h-11 pl-10 border rounded-xl px-4 text-sm focus:ring-2 focus:ring-[#1D9E75]/10 focus:border-[#1D9E75] transition-all"
+                        className="w-full h-12 pl-10 bg-gray-50 text-gray-700 rounded-xl px-4 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#1D9E75]/20 transition-all placeholder:text-gray-400"
                         placeholder="Ex: Alger, Centre"
                       />
                     </div>
@@ -393,7 +393,7 @@ export function SecretaryWalkInPage() {
             <div className="pt-6 flex gap-4">
               <button
                 onClick={() => navigate(-1)}
-                className="flex-1 h-14 border-2 border-gray-100 rounded-2xl text-gray-500 font-bold hover:bg-gray-50 transition-all"
+                className="flex-1 h-14 bg-gray-100 text-gray-600 rounded-2xl font-bold hover:bg-gray-200 transition-all"
               >
                 Annuler
               </button>

@@ -110,7 +110,15 @@ export async function getWaitlist() { return [] }
 export async function promoteWaitlist(_id: string, _slotTime: string) { return {} }
 export async function removeFromWaitlist(_id: string) { return {} }
 export async function notifyWaitlistPatient(_id: string) { return {} }
-export async function rescheduleAppointment(_id: string, _dt: string) { return {} }
+export async function rescheduleAppointment(id: string, datetime: string) {
+  const [date, timeWithSecs] = datetime.split('T')
+  const time = timeWithSecs.substring(0, 5)
+  const res = await api.put(`/appointments/${id}/reschedule`, {
+    appointment_date: date,
+    start_time: time
+  })
+  return res.data
+}
 export async function createPatient(data: Record<string, unknown>) {
   const res = await api.post('/patients', data)
   return res.data.data

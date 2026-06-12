@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils/cn';
+import { Link } from 'react-router-dom';
+import { ROUTES } from '@/constants/routes';
 
 export function PatientDashboardPage() {
   const stats = [
@@ -27,9 +29,11 @@ export function PatientDashboardPage() {
           <h1 className="text-3xl font-black text-gray-900">Bonjour, Patient 👋</h1>
           <p className="text-gray-500 font-medium">Voici un aperçu de votre santé aujourd'hui.</p>
         </div>
-        <Button className="bg-[#1D9E75] hover:bg-[#15805d] rounded-2xl h-12 px-6 font-bold shadow-lg shadow-emerald-100">
-          <Plus size={18} className="mr-2" /> Prendre un rendez-vous
-        </Button>
+        <Link to={ROUTES.DOCTORS}>
+          <Button className="bg-[#1D9E75] hover:bg-[#15805d] rounded-2xl h-12 px-6 font-bold shadow-lg shadow-emerald-100">
+            <Plus size={18} className="mr-2" /> Prendre un rendez-vous
+          </Button>
+        </Link>
       </div>
 
       {/* Quick Stats */}

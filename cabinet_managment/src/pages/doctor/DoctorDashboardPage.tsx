@@ -425,7 +425,6 @@ export function DoctorDashboardPage() {
                                                 <th className="font-semibold py-3 px-5">Heure</th>
                                                 <th className="font-semibold py-3 px-5">Patient</th>
                                                 <th className="font-semibold py-3 px-5">Motif</th>
-                                                <th className="font-semibold py-3 px-5">Type</th>
                                                 <th className="font-semibold py-3 px-5">Statut</th>
                                                 <th className="font-semibold py-3 px-5"></th>
                                             </tr>
@@ -455,13 +454,6 @@ export function DoctorDashboardPage() {
                                                             </div>
                                                         </td>
                                                         <td className="py-3 px-5 text-slate-600">Consultation générale</td>
-                                                        <td className="py-3 px-5">
-                                                            {idx === 2 ? (
-                                                                <span className="text-purple-600 font-medium text-xs">Téléconsultation</span>
-                                                            ) : (
-                                                                <span className="text-blue-600 font-medium text-xs">Cabinet</span>
-                                                            )}
-                                                        </td>
                                                         <td className="py-3 px-5">
                                                             {apt.status === 'confirmed' ? (
                                                                 <span className="text-emerald-600 font-medium text-xs">Confirmé</span>
