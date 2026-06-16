@@ -1,4 +1,4 @@
-import { Link, Navigate, Route, Routes } from 'react-router-dom'
+import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { GuestRoute } from '@/components/routing/GuestRoute'
 import { ProtectedRoute } from '@/components/routing/ProtectedRoute'
 import { ROUTES } from '@/constants/routes'
@@ -52,6 +52,7 @@ import { DoctorsSearchPage } from '@/pages/public/DoctorsSearchPage'
 import { useAuthStore } from '@/store/auth.store'
 
 import { NotificationsPage } from '@/pages/notifications/NotificationsPage'
+import { FloatingAssistant } from '@/components/ui/FloatingAssistant'
 
 const ComingSoon = ({ label }: { label: string }) => {
   const language = usePreferencesStore((s) => s.language)
@@ -82,8 +83,12 @@ function DoctorsSearchRouteWrapper() {
 }
 
 export default function App() {
+  const location = useLocation();
+  const isWebView = location.pathname === ROUTES.LANDING || location.pathname === ROUTES.DOCTORS;
+
   return (
     <>
+      {isWebView && <FloatingAssistant />}
       <Routes>
         {/* Public Routes */}
         <Route path={ROUTES.LANDING} element={<LandingPage />} />

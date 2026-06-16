@@ -106,7 +106,18 @@ const dict = {
     footerCabinet: "Solution Cabinet",
     footerClinic: "Solution Clinique",
     footerPricing: "Tarification",
-    footerCopyright: "© 2026 DocNow. Tous droits réservés. Design premium par Antigravity."
+    footerCopyright: "© 2026 DocNow. Tous droits réservés. Design premium par Antigravity.",
+    
+    // Chatbot Assistant
+    chatbotTitle: "Assistant Médical",
+    chatbotOnline: "En ligne",
+    chatbotWelcome: "👋 Bonjour ! Je suis votre assistant médical intelligent. Comment puis-je vous aider aujourd'hui ?",
+    chatbotSuggestionsTitle: "Suggestions rapides",
+    chatbotSug1: "Conseils pour diabétiques",
+    chatbotSug2: "Comment renforcer mon immunité ?",
+    chatbotSug3: "Symptômes de la grippe ?",
+    chatbotInputPlaceholder: "Tapez votre message ici...",
+    chatbotDisclaimer: "Les informations fournies sont à titre informatif et ne remplacent pas une consultation médicale."
   },
   en: {
     dashboard: 'Dashboard',
@@ -213,7 +224,18 @@ const dict = {
     footerCabinet: 'Cabinet Solution',
     footerClinic: 'Clinic Solution',
     footerPricing: 'Pricing',
-    footerCopyright: '© 2026 DocNow. All rights reserved. Premium design by Antigravity.'
+    footerCopyright: '© 2026 DocNow. All rights reserved. Premium design by Antigravity.',
+
+    // Chatbot Assistant
+    chatbotTitle: "Medical Assistant",
+    chatbotOnline: "Online now",
+    chatbotWelcome: "👋 Welcome! I am your smart medical assistant. How can I help you today?",
+    chatbotSuggestionsTitle: "Quick suggestions",
+    chatbotSug1: "Tips for diabetics",
+    chatbotSug2: "How to boost immunity?",
+    chatbotSug3: "Flu symptoms?",
+    chatbotInputPlaceholder: "Type your message here...",
+    chatbotDisclaimer: "The information provided is for educational purposes and does not replace medical advice."
   },
   ar: {
     dashboard: 'لوحة التحكم',
@@ -320,7 +342,18 @@ const dict = {
     footerCabinet: 'حلول العيادات',
     footerClinic: 'حلول المستشفيات',
     footerPricing: 'الأسعار',
-    footerCopyright: '© 2026 DocNow. جميع الحقوق محفوظة. تصميم مميز بواسطة Antigravity.'
+    footerCopyright: '© 2026 DocNow. جميع الحقوق محفوظة. تصميم مميز بواسطة Antigravity.',
+
+    // Chatbot Assistant
+    chatbotTitle: 'المساعد الطبي',
+    chatbotOnline: 'متصل الآن',
+    chatbotWelcome: '👋 مرحباً بك! أنا مساعدك الطبي الذكي، كيف يمكنني مساعدتك اليوم؟',
+    chatbotSuggestionsTitle: 'اقتراحات سريعة',
+    chatbotSug1: 'نصائح لمرضى السكري',
+    chatbotSug2: 'كيف أقوي مناعتي؟',
+    chatbotSug3: 'ما هي أعراض الأنفلونزا؟',
+    chatbotInputPlaceholder: 'اكتب رسالتك هنا...',
+    chatbotDisclaimer: 'المعلومات المقدمة هي لأغراض توعوية ولا تغني عن استشارة الطبيب.'
   },
 } as const
 

@@ -87,6 +87,13 @@ class PrivateCabinetController extends Controller
             ]);
         });
 
+        \App\Services\NotificationService::notifyAdmins(
+            'Nouveau cabinet privé',
+            "Le Dr. {$doctor->user->name} a créé un nouveau cabinet privé ({$request->name}) qui nécessite votre attention.",
+            'system',
+            ['cabinet_id' => $cabinet->id]
+        );
+
         return response()->json([
             'success' => true,
             'message' => 'Private cabinet created successfully.',
@@ -553,6 +560,13 @@ public function createSecretary(Request $request)
             'doctor_id' => $doctor->id,
         ]);
     });
+
+    \App\Services\NotificationService::notifyAdmins(
+        'Nouveau secrétaire',
+        "Le Dr. {$doctor->user->name} a ajouté un nouveau secrétaire ({$request->name}).",
+        'system',
+        ['secretary_id' => $secretary->id]
+    );
 
     return response()->json([
         'success' => true,

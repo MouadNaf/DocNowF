@@ -36,9 +36,6 @@ export function PatientLayout({ children }: PatientLayoutProps) {
   const menuItems = [
     { label: 'Tableau de bord', icon: LayoutDashboard, path: ROUTES.PATIENT_DASHBOARD },
     { label: 'Mes Rendez-vous', icon: Calendar, path: ROUTES.PATIENT_APPOINTMENTS },
-    { label: 'Mon Portefeuille', icon: Wallet, path: '/patient/wallet' },
-    { label: 'Historique Médical', icon: History, path: ROUTES.PATIENT_RECORDS },
-    { label: 'Messages', icon: MessageSquare, path: '/patient/messages' },
     { label: 'Médecins Favoris', icon: Heart, path: ROUTES.PATIENT_FAVORITES },
   ];
 

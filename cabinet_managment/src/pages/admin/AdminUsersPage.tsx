@@ -289,7 +289,7 @@ export function AdminUsersPage() {
                   </div>
                   <div>
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Type d'entité</p>
-                    <p className="text-xl font-black text-gray-900 capitalize">{selectedEntity.entity_type.replace('_', ' ')}</p>
+                    <p className="text-xl font-black text-gray-900 capitalize">{selectedEntity.entity_type?.replace('_', ' ')}</p>
                   </div>
                 </div>
 
@@ -346,20 +346,20 @@ export function AdminUsersPage() {
                   <FileText size={16} /> Dossier de vérification
                 </h5>
                 
-                {selectedEntity.documents ? (
+                {selectedEntity.documents && typeof selectedEntity.documents === 'object' && Object.keys(selectedEntity.documents).length > 0 ? (
                   <div className="grid grid-cols-1 gap-6">
                     {Object.entries(selectedEntity.documents).map(([key, path]: [string, any]) => (
                       <div key={key} className="space-y-2">
-                        <p className="text-xs font-bold text-gray-600 capitalize ml-1">{key.replace('_', ' ')}</p>
+                        <p className="text-xs font-bold text-gray-600 capitalize ml-1">{String(key).replace('_', ' ')}</p>
                         <div className="aspect-video bg-gray-100 rounded-[24px] overflow-hidden border border-gray-200 group relative shadow-sm">
                           <img 
-                            src={`${API_BASE_URL}/storage/${path?.replace('public/', '')}`} 
-                            alt={key} 
+                            src={`${API_BASE_URL}/storage/${typeof path === 'string' ? path.replace('public/', '') : ''}`} 
+                            alt={String(key)} 
                             className="w-full h-full object-cover" 
                             onError={(e: any) => e.target.src = 'https://placehold.co/600x400?text=Document'}
                           />
                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <a href={`${API_BASE_URL}/storage/${path?.replace('public/', '')}`} target="_blank" rel="noreferrer" className="bg-white text-gray-900 px-6 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-xl hover:scale-105 transition-transform">
+                            <a href={`${API_BASE_URL}/storage/${typeof path === 'string' ? path.replace('public/', '') : ''}`} target="_blank" rel="noreferrer" className="bg-white text-gray-900 px-6 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-xl hover:scale-105 transition-transform">
                               <Download size={18} /> Consulter le document
                             </a>
                           </div>

@@ -82,6 +82,13 @@ class WalletController extends Controller
             'status' => 'pending',
         ]);
 
+        \App\Services\NotificationService::notifyAdmins(
+            'Nouvelle demande de recharge',
+            "Le Dr. {$doctor->user->name} a soumis une demande de recharge de {$request->amount} DZD.",
+            'system',
+            ['recharge_request_id' => $rechargeRequest->id]
+        );
+
         return response()->json([
             'message' => 'Recharge request submitted successfully. It will be reviewed by an admin.',
             'data' => $rechargeRequest

@@ -35,9 +35,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     { label: 'Tableau de bord', icon: LayoutDashboard, path: ROUTES.ADMIN_DASHBOARD },
     { label: 'Utilisateurs', icon: Users, path: ROUTES.ADMIN_USERS },
     { label: 'Recharges Portefeuille', icon: Wallet, path: ROUTES.ADMIN_WALLET },
-    { label: 'Paiements', icon: Receipt, path: '/admin/payments' },
-    { label: 'Plaintes', icon: AlertCircle, path: '/admin/complaints' },
-    { label: 'Activité', icon: Activity, path: '/admin/activity' },
   ];
 
   return (

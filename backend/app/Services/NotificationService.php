@@ -24,6 +24,17 @@ class NotificationService
     }
 
     /**
+     * Notify all admin users.
+     */
+    public static function notifyAdmins(string $title, string $message, string $type = 'system', array $data = []): void
+    {
+        $admins = User::where('role', 'admin')->get();
+        foreach ($admins as $admin) {
+            self::send($admin->id, $title, $message, $type, $data);
+        }
+    }
+
+    /**
      * Notify all parties when a new appointment is booked.
      * Sends to: Doctor + Secretary (if any) + Patient
      */

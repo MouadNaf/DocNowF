@@ -224,6 +224,21 @@ private function getRoleData(User $user)
         // 6. Generate token
         $token = $user->createToken('auth_token')->plainTextToken;
 
+        // Notify Admins about new registration if it's a professional
+        if (in_array($user->role, ['doctor', 'clinic', 'collective_cabinet'])) {
+            $roleLabel = match($user->role) {
+                'doctor' => 'Médecin',
+                'clinic' => 'Clinique',
+                'collective_cabinet' => 'Cabinet Collectif',
+            };
+            \App\Services\NotificationService::notifyAdmins(
+                'Nouvelle inscription',
+                "Un nouveau compte ({$roleLabel}) a été créé par {$user->name} et nécessite votre vérification.",
+                'system',
+                ['user_id' => $user->id]
+            );
+        }
+
         // 7. Response with role_data
         return response()->json([
             'success' => true,

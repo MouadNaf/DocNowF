@@ -218,7 +218,7 @@ export function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section id="doctors" className="py-24 bg-gray-50/50">
+      <section id="about" className="py-24 bg-gray-50/50">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-3xl lg:text-4xl font-black text-gray-900">{t(language, 'featuresTitle')}</h2>
@@ -309,7 +309,7 @@ export function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-gray-400 py-16 px-6">
+      <footer id="contact" className="bg-gray-900 text-gray-400 py-16 px-6">
         <div className="max-w-7xl mx-auto grid md:grid-cols-4 gap-12">
           <div className="space-y-6">
             <Logo textClassName="text-white" />
