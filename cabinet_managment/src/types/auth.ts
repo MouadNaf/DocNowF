@@ -32,6 +32,10 @@ export interface AuthUser {
   address?: string
   speciality?: string
   doctorId?: string   // populated for secretary role (their assigned doctor)
+  assignedDoctor?: {
+    name: string
+    speciality?: string
+  }
 }
 
 export interface LoginCredentials {

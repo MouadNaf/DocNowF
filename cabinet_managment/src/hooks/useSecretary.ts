@@ -6,22 +6,38 @@ import type { AppointmentFilters } from '@/lib/api/secretary'
 // ─── Helper ───────────────────────────────────────────────────────────────────
 function useDoctorId() {
   const user = useAuthStore((s) => s.user)
-  // For secretary: use their assigned doctorId from role_data
-  // If not available (stale session), return empty string — backend auto-detects from auth token
   if (!user) return ''
   if (user.role === 'secretary') return user.doctorId ?? ''
   if (user.role === 'doctor') return user.id ?? ''
   return ''
 }
 
+export function useSecretaryProfile() {
+  const updateUser = useAuthStore((s) => s.updateUser)
+  return useQuery({
+    queryKey: ['secretary', 'profile'],
+    queryFn: async () => {
+      const { authService } = await import('@/services/auth.service')
+      const profile = await authService.fetchMe()
+      updateUser(profile)
+      return profile
+    },
+    staleTime: 60_000,
+  })
+}
+
 // ─── Today's schedule ─────────────────────────────────────────────────────────
 export function useTodaySchedule() {
+  const user = useAuthStore((s) => s.user)
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const doctorId = useDoctorId()
+
   return useQuery({
     queryKey: ['secretary', 'today', doctorId],
-    queryFn: () => secretaryApi.getTodaySchedule(doctorId),
-    // Fired even if doctorId is empty, backend will resolve from token if possible
-    refetchInterval: 60000,
+    queryFn: () => secretaryApi.getTodaySchedule(),
+    enabled: isAuthenticated && user?.role === 'secretary',
+    refetchInterval: 60_000,
+    retry: 1,
   })
 }
 

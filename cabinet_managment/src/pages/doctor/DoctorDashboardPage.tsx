@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { DoctorLayout } from '@/widgets/layout/DoctorLayout';
 import { StatCard } from '@/components/ui/StatCard';
 import { Calendar, Users, XCircle, DollarSign, Building2, MapPin, Phone, Mail, User, Briefcase, DollarSign as DollarIcon, Clock, FileText, AlertCircle, TrendingUp, ChevronRight, ChevronLeft, Video, MoreHorizontal, CheckCircle2, Activity, FilePlus } from 'lucide-react';
-import { useDashboardStats, useAppointments, usePatients } from '@/shared/api/hooks';
+import { useDashboardStats, useTodayAppointments, usePatients } from '@/shared/api/hooks';
+import { formatAppointmentTime } from '@/lib/utils/date';
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
@@ -34,7 +35,7 @@ type CabinetFormValues = z.infer<typeof cabinetSchema>;
 export function DoctorDashboardPage() {
     const { user, updateUser } = useAuthStore();
     const { data: stats, loading: statsLoading } = useDashboardStats();
-    const { appointments, loading: aptsLoading } = useAppointments({ date: new Date().toISOString().split('T')[0] }); 
+    const { appointments, loading: aptsLoading } = useTodayAppointments();
     const { patients, loading: patientsLoading } = usePatients();
     const navigate = useNavigate();
     const [showForm, setShowForm] = useState(false);
@@ -430,14 +431,18 @@ export function DoctorDashboardPage() {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-50">
-                                            {appointments.length === 0 ? (
+                                            {aptsLoading ? (
                                                 <tr>
-                                                    <td colSpan={6} className="text-center py-10 text-slate-400">Aucun rendez-vous aujourd'hui</td>
+                                                    <td colSpan={5} className="text-center py-10 text-slate-400">Chargement des rendez-vous...</td>
+                                                </tr>
+                                            ) : appointments.length === 0 ? (
+                                                <tr>
+                                                    <td colSpan={5} className="text-center py-10 text-slate-400">Aucun rendez-vous aujourd'hui</td>
                                                 </tr>
                                             ) : (
-                                                appointments.slice(0, 5).map((apt, idx) => (
+                                                appointments.slice(0, 5).map((apt) => (
                                                     <tr key={apt.id} className="hover:bg-slate-50/50 transition-colors group">
-                                                        <td className="py-3 px-5 font-bold text-blue-600">{apt.start_time.substring(0, 5)}</td>
+                                                        <td className="py-3 px-5 font-bold text-blue-600">{formatAppointmentTime(apt.start_time)}</td>
                                                         <td className="py-3 px-5">
                                                             <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate(`/doctor/consultation/${apt.id}`)}>
                                                                 <div className="size-8 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200">
@@ -610,7 +615,10 @@ export function DoctorDashboardPage() {
                                 
                                 <div className="flex-1 overflow-y-auto pr-2 relative agenda-scroll">
                                     {timelineHours.map(hour => {
-                                        const aptsHere = appointments.filter(a => a.start_time.startsWith(hour.substring(0, 2)));
+                                        const hourPrefix = hour.substring(0, 2);
+                                        const aptsHere = appointments.filter(a =>
+                                            formatAppointmentTime(a.start_time).startsWith(hourPrefix)
+                                        );
 
                                         return (
                                             <div key={hour} className="flex mb-4 group">

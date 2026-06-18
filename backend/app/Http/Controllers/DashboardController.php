@@ -28,7 +28,7 @@ class DashboardController extends Controller
         $doctor = Doctor::find($doctorId);
 
         return response()->json([
-            'todayAppointments' => Appointment::where('doctor_id', $doctorId)->where('appointment_date', $today)->count(),
+            'todayAppointments' => Appointment::where('doctor_id', $doctorId)->whereDate('appointment_date', $today)->count(),
             'totalPatients'     => Patient::whereHas('appointments', fn($q) => $q->where('doctor_id', $doctorId))->count(),
             'noShows'           => Appointment::where('doctor_id', $doctorId)->where('status', 'no_show')->count(),
             'revenueToday'      => (float) $revenueToday,
@@ -106,7 +106,7 @@ class DashboardController extends Controller
         $doctorId = $this->resolveDoctorId($request);
 
         if (!$doctorId) {
-            return response()->json(['message' => 'Doctor not found or unauthorized'], 403);
+            return response()->json(['message' => 'Doctor not found or unauthorized. Secretary account may not be linked to a doctor.'], 403);
         }
 
         $appointments = Appointment::with(['patient.user'])
@@ -147,7 +147,7 @@ class DashboardController extends Controller
         $doctorId = $this->resolveDoctorId($request);
 
         if (!$doctorId) {
-            return response()->json(['message' => 'Doctor not found or unauthorized'], 403);
+            return response()->json(['message' => 'Doctor not found or unauthorized. Secretary account may not be linked to a doctor.'], 403);
         }
 
         $doctor = Doctor::find($doctorId);
@@ -286,16 +286,17 @@ class DashboardController extends Controller
     public function appointments(Request $request)
     {
         $request->validate([
-            'doctor_id' => 'nullable|integer',
-            'date'      => 'nullable|date_format:Y-m-d',
-            'status'    => 'nullable|in:confirmed,cancelled,pending,completed',
-            'patient'   => 'nullable|string|max:100',
+            'doctor_id'       => 'nullable|integer',
+            'date'            => 'nullable|date_format:Y-m-d',
+            'status'          => 'nullable|in:confirmed,cancelled,pending,completed,arrived,no_show',
+            'patient'         => 'nullable|string|max:100',
+            'payment_status'  => 'nullable|in:unpaid,partial,paid,unpaid_or_partial',
         ]);
 
         $doctorId = $this->resolveDoctorId($request);
 
         if (!$doctorId) {
-            return response()->json(['message' => 'Doctor not found or unauthorized'], 403);
+            return response()->json(['message' => 'Doctor not found or unauthorized. Secretary account may not be linked to a doctor.'], 403);
         }
 
         $query = Appointment::with(['patient.user'])
@@ -317,15 +318,54 @@ class DashboardController extends Controller
             });
         }
 
+        if ($request->filled('payment_status')) {
+            if ($request->payment_status === 'unpaid_or_partial') {
+                $query->whereIn('payment_status', ['unpaid', 'partial']);
+            } else {
+                $query->where('payment_status', $request->payment_status);
+            }
+        }
+
+        $orderDir = $request->filled('date') ? 'asc' : 'desc';
+
         $appointments = $query
-            ->orderBy('appointment_date', 'asc')
-            ->orderBy('start_time', 'asc')
+            ->orderBy('appointment_date', $orderDir)
+            ->orderBy('start_time', $orderDir)
             ->get()
             ->map(fn($a) => $this->formatAppointment($a));
 
         return response()->json([
             'success' => true,
             'count'   => $appointments->count(),
+            'data'    => $appointments,
+        ]);
+    }
+
+    // -------------------------------------------------------------------------
+    // 3b. GET /api/secretary/schedule/today
+    //     Secretary dashboard — uses server date + auth-linked doctor
+    // -------------------------------------------------------------------------
+    public function secretaryTodaySchedule()
+    {
+        $user = Auth::user()?->loadMissing('secretary.doctor.user');
+
+        if ($user?->role !== 'secretary' || !$user->secretary?->doctor_id) {
+            return response()->json([
+                'message' => 'Secretary account is not linked to a doctor.',
+            ], 403);
+        }
+
+        $appointments = Appointment::with(['patient.user'])
+            ->where('doctor_id', $user->secretary->doctor_id)
+            ->whereDate('appointment_date', today())
+            ->orderBy('start_time')
+            ->get()
+            ->map(fn ($a) => $this->formatAppointment($a));
+
+        return response()->json([
+            'success' => true,
+            'count'   => $appointments->count(),
+            'date'    => today()->toDateString(),
             'data'    => $appointments,
         ]);
     }
@@ -344,7 +384,7 @@ class DashboardController extends Controller
         $doctorId = $this->resolveDoctorId($request);
 
         if (!$doctorId) {
-            return response()->json(['message' => 'Doctor not found or unauthorized'], 403);
+            return response()->json(['message' => 'Doctor not found or unauthorized. Secretary account may not be linked to a doctor.'], 403);
         }
 
         $query = Patient::with('user')
@@ -463,21 +503,43 @@ class DashboardController extends Controller
     // -------------------------------------------------------------------------
     public function markPaid(Request $request, $id)
     {
-        $appointment = Appointment::findOrFail($id);
-        
+        $request->validate([
+            'amount'         => 'nullable|numeric|min:0.01',
+            'payment_method' => 'nullable|string|in:cash,card,ccp,virement,bank_transfer',
+            'notes'          => 'nullable|string|max:500',
+        ]);
+
+        $appointment = Appointment::with('patient.user')->findOrFail($id);
+
         $doctorId = $this->resolveDoctorId($request);
-        if ($appointment->doctor_id != $doctorId) {
+        if (!$doctorId || (int) $appointment->doctor_id !== (int) $doctorId) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        if (is_null($appointment->consultation_fee)) {
+        $fee = (float) ($appointment->consultation_fee ?? 0);
+        if ($fee <= 0) {
             return response()->json(['message' => 'Price not set'], 400);
         }
 
-        $appointment->payment_status = 'paid';
+        $paidSoFar = (float) ($appointment->paid_amount ?? 0);
+        $remaining = max(0, $fee - $paidSoFar);
+
+        if ($remaining <= 0) {
+            return response()->json(['message' => 'Appointment already fully paid'], 400);
+        }
+
+        $payment = (float) ($request->input('amount', $remaining));
+        $payment = min($payment, $remaining);
+
+        $newTotal = $paidSoFar + $payment;
+        $appointment->paid_amount = $newTotal;
+        $appointment->payment_status = $newTotal >= $fee ? 'paid' : 'partial';
         $appointment->save();
 
-        return response()->json($this->formatAppointment($appointment));
+        return response()->json([
+            'success' => true,
+            'data'    => $this->formatAppointment($appointment->fresh(['patient.user'])),
+        ]);
     }
 
     // -------------------------------------------------------------------------
@@ -571,20 +633,27 @@ class DashboardController extends Controller
     // -------------------------------------------------------------------------
     private function formatAppointment(Appointment $a): array
     {
+        $time = $a->start_time;
+        if (is_string($time) && strlen($time) >= 5) {
+            $time = substr($time, 0, 5);
+        }
+
         return [
             'id'               => $a->id,
             'appointment_date' => $a->appointment_date,
-            'start_time'       => $a->start_time,
+            'start_time'       => $time,
             'status'           => $a->status,
             'payment_status'   => $a->payment_status ?? 'unpaid',
             'consultation_fee' => $a->consultation_fee ?? 0,
+            'paid_amount'      => $a->paid_amount ?? 0,
+            'remaining_balance'=> max(0, (float) ($a->consultation_fee ?? 0) - (float) ($a->paid_amount ?? 0)),
             'patient_id'       => $a->patient_id,
             'patient'          => [
                 'id'    => $a->patient_id,
                 'name'  => $a->patient?->user?->name,
                 'phone' => $a->patient?->user?->phone_number,
             ],
-            'scheduled_at'     => $a->appointment_date . ' ' . $a->start_time,
+            'scheduled_at'     => $a->appointment_date . ' ' . $time,
         ];
     }
 
@@ -600,7 +669,7 @@ class DashboardController extends Controller
         }
 
         // 2. Auto-detect from auth user
-        $user = Auth::user();
+        $user = Auth::user()?->loadMissing('secretary', 'doctor');
 
         if (!$user) return null;
 

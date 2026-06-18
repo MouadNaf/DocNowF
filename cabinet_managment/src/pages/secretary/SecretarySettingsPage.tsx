@@ -1,9 +1,18 @@
 import { useState } from 'react'
+import { Loader2 } from 'lucide-react'
 import { SecretaryLayout } from '@/components/layout/SecretaryLayout'
-import { MOCK_SECRETARY } from '@/lib/mock/secretary.mock'
+import { useAuthStore } from '@/store/auth.store'
+import { useSecretaryProfile } from '@/hooks/useSecretary'
 
 export function SecretarySettingsPage() {
   const [tab, setTab] = useState<'profil' | 'notifications' | 'securite'>('profil')
+  const user = useAuthStore((s) => s.user)
+  const { isLoading } = useSecretaryProfile()
+
+  const doctorDisplay = user?.assignedDoctor?.name
+    ? (user.assignedDoctor.name.startsWith('Dr.') ? user.assignedDoctor.name : `Dr. ${user.assignedDoctor.name}`)
+    : 'Non assigné'
+
   return (
     <SecretaryLayout title="Paramètres">
       <div className="max-w-3xl">
@@ -20,27 +29,43 @@ export function SecretarySettingsPage() {
         </div>
         
         <div className="bg-white rounded-2xl p-6 shadow-sm">
-          {tab === 'profil' && (
+          {isLoading ? (
+            <div className="flex items-center justify-center py-16 gap-3 text-gray-500">
+              <Loader2 className="animate-spin text-[#1D9E75]" size={24} />
+              <span className="text-sm font-medium">Chargement du profil...</span>
+            </div>
+          ) : tab === 'profil' && (
             <div className="space-y-4 text-sm">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Informations du compte</h3>
               <div className="grid gap-4">
                 <div className="p-4 bg-gray-50/50 rounded-xl">
                   <p className="text-gray-500 mb-1">Nom complet</p>
-                  <p className="font-semibold text-gray-800">{MOCK_SECRETARY.firstName} {MOCK_SECRETARY.lastName}</p>
+                  <p className="font-semibold text-gray-800">{`${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim() || '—'}</p>
                 </div>
                 <div className="p-4 bg-gray-50/50 rounded-xl">
                   <p className="text-gray-500 mb-1">Adresse email</p>
-                  <p className="font-semibold text-gray-800">{MOCK_SECRETARY.email}</p>
+                  <p className="font-semibold text-gray-800">{user?.email ?? '—'}</p>
+                </div>
+                <div className="p-4 bg-gray-50/50 rounded-xl">
+                  <p className="text-gray-500 mb-1">Téléphone</p>
+                  <p className="font-semibold text-gray-800">{user?.phone_number ?? '—'}</p>
+                </div>
+                <div className="p-4 bg-gray-50/50 rounded-xl">
+                  <p className="text-gray-500 mb-1">Ville</p>
+                  <p className="font-semibold text-gray-800">{user?.city ?? '—'}</p>
                 </div>
                 <div className="p-4 bg-gray-50/50 rounded-xl">
                   <p className="text-gray-500 mb-1">Médecin assigné</p>
-                  <p className="font-semibold text-gray-800">Dr. {MOCK_SECRETARY.assignedDoctor.firstName} {MOCK_SECRETARY.assignedDoctor.lastName}</p>
+                  <p className="font-semibold text-gray-800">{doctorDisplay}</p>
+                  {user?.assignedDoctor?.speciality && (
+                    <p className="text-xs text-gray-500 mt-1">{user.assignedDoctor.speciality}</p>
+                  )}
                 </div>
               </div>
             </div>
           )}
           
-          {tab === 'notifications' && (
+          {!isLoading && tab === 'notifications' && (
             <div className="space-y-4 text-sm">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Préférences de notification</h3>
               <label className="flex items-center justify-between bg-gray-50/50 hover:bg-gray-50 rounded-xl p-4 transition-colors cursor-pointer">
@@ -54,7 +79,7 @@ export function SecretarySettingsPage() {
             </div>
           )}
           
-          {tab === 'securite' && (
+          {!isLoading && tab === 'securite' && (
             <div className="space-y-4 text-sm max-w-md">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Changer le mot de passe</h3>
               <div className="grid gap-4">
@@ -70,4 +95,3 @@ export function SecretarySettingsPage() {
     </SecretaryLayout>
   )
 }
-

@@ -19,8 +19,19 @@ class Appointment extends Model
         'status',
         'cancellation_reason',
         'consultation_fee',
+        'paid_amount',
         'payment_status',
     ];
+
+    protected $casts = [
+        'consultation_fee' => 'decimal:2',
+        'paid_amount'      => 'decimal:2',
+    ];
+
+    public function getRemainingBalanceAttribute(): float
+    {
+        return max(0, (float) ($this->consultation_fee ?? 0) - (float) ($this->paid_amount ?? 0));
+    }
 
     // Relationships
     public function doctor()

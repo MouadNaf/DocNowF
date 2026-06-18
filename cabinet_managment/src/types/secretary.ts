@@ -5,6 +5,8 @@ export interface SecretaryAppointment {
   status: string
   payment_status: string
   fee: number
+  paid_amount: number
+  remaining_balance: number
   notes: string | null
   scheduled_at: string
   date: string

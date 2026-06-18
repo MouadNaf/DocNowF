@@ -1,4 +1,5 @@
 import api from '@/lib/api';
+import { localDateString } from '@/lib/utils/date';
 import type { Appointment } from '@/entities/appointment';
 import type { Patient } from '@/entities/patient';
 import type {
@@ -9,25 +10,39 @@ import type {
   UpdateTreatmentStepPayload,
 } from '@/entities/treatment';
 
-export const getAppointments = async (filters: { date?: string, patient?: string, status?: string } = {}): Promise<Appointment[]> => {
-  const res = await api.get('/appointments', { params: filters });
-  const appointments = res.data.appointments || res.data.data || [];
-  
-  return appointments.map((apt: any) => ({
+const mapAppointment = (apt: any): Appointment => {
+  const rawTime = apt.start_time || apt.time || '';
+  const startTime =
+    typeof rawTime === 'string' && rawTime.length >= 5 ? rawTime.slice(0, 5) : String(rawTime || '');
+
+  return {
     id: String(apt.id),
     patient_id: String(apt.patient_id),
     patient: {
       id: apt.patient?.id || apt.patient_id,
-      name: apt.patient?.user?.name || apt.patient?.name || apt.name || `Patient #${apt.patient_id}`
+      name: apt.patient?.user?.name || apt.patient?.name || apt.name || `Patient #${apt.patient_id}`,
     },
     doctor_id: String(apt.doctor_id),
     appointment_date: apt.appointment_date,
-    start_time: apt.start_time,
+    start_time: startTime,
     status: apt.status,
     payment_status: apt.payment_status || 'unpaid',
     consultation_fee: Number(apt.consultation_fee || 0),
     paidAt: apt.paid_at,
-  }));
+  };
+};
+
+export const getAppointments = async (filters: { date?: string, patient?: string, status?: string } = {}): Promise<Appointment[]> => {
+  const res = await api.get('/appointments', { params: filters });
+  const appointments = res.data.appointments || res.data.data || [];
+  return appointments.map(mapAppointment);
+};
+
+/** Today's appointments using server timezone (matches dashboard stats). */
+export const getDoctorTodayAppointments = async (): Promise<Appointment[]> => {
+  const res = await api.get('/appointments/dashboard/doc');
+  const today = res.data?.data?.today ?? [];
+  return today.map(mapAppointment);
 };
 
 export const getPatients = async (): Promise<Patient[]> => {
@@ -47,7 +62,7 @@ export const getDashboardStats = async () => {
 
 export const getSchedules = async () => {
     const res = await api.get('/doctor/calendar', { 
-        params: { date: new Date().toISOString().split('T')[0] } 
+        params: { date: localDateString() } 
     });
     return res.data.data;
 };

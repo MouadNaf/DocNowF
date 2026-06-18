@@ -2,6 +2,39 @@ import api from '@/lib/api'
 import type { SecretaryAppointment, SecretaryPatient } from '@/types/secretary'
 import type { Treatment, TreatmentsPaginatedResponse, TreatmentPayment, SecretaryTreatmentStats } from '@/entities/treatment'
 
+export function localDateString(date = new Date()): string {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+function mapAppointment(a: any): SecretaryAppointment {
+  const rawTime = a.start_time || a.time || ''
+  const time = typeof rawTime === 'string' && rawTime.length >= 5 ? rawTime.slice(0, 5) : rawTime
+  const fee = Number(a.consultation_fee || 0)
+  const paidAmount = Number(a.paid_amount || 0)
+  const remaining = Number(a.remaining_balance ?? Math.max(0, fee - paidAmount))
+
+  return {
+    id: a.id,
+    status: a.status,
+    payment_status: a.payment_status || 'unpaid',
+    fee,
+    paid_amount: paidAmount,
+    remaining_balance: remaining,
+    notes: a.notes || null,
+    scheduled_at: a.scheduled_at,
+    date: a.appointment_date || a.date,
+    time,
+    patient_id: a.patient_id,
+    name: a.patient?.name || a.name || 'Patient inconnu',
+    phone: a.patient?.phone || a.phone || '—',
+    gender: a.patient?.gender || a.gender || null,
+    arrived_at: a.arrived_at || null,
+  }
+}
+
 // ─── Appointments ────────────────────────────────────────────────────────────
 
 export interface AppointmentFilters {
@@ -9,36 +42,26 @@ export interface AppointmentFilters {
   date?: string
   patient?: string
   status?: string
+  payment_status?: string
 }
 
 export async function getAppointments(filters: AppointmentFilters): Promise<SecretaryAppointment[]> {
-  const params: Record<string, string> = { doctor_id: filters.doctor_id }
-  if (filters.date)    params.date    = filters.date
+  const params: Record<string, string> = {}
+  if (filters.doctor_id) params.doctor_id = filters.doctor_id
+  if (filters.date) params.date = filters.date
   if (filters.patient) params.patient = filters.patient
-  if (filters.status)  params.status  = filters.status
+  if (filters.status) params.status = filters.status
+  if (filters.payment_status) params.payment_status = filters.payment_status
   const res = await api.get('/appointments', { params })
   const data = res.data.data ?? []
   
-  return data.map((a: any) => ({
-    id: a.id,
-    status: a.status,
-    payment_status: a.payment_status || 'unpaid',
-    fee: Number(a.consultation_fee || 0),
-    notes: a.notes || null,
-    scheduled_at: a.scheduled_at,
-    date: a.appointment_date || a.date,
-    time: a.start_time || a.time,
-    patient_id: a.patient_id,
-    name: a.patient?.name || a.name || 'Patient inconnu',
-    phone: a.patient?.phone || a.phone || '—',
-    gender: a.patient?.gender || a.gender || null,
-    arrived_at: a.arrived_at || null
-  }))
+  return data.map(mapAppointment)
 }
 
-export async function getTodaySchedule(doctor_id: string): Promise<SecretaryAppointment[]> {
-  const today = new Date().toISOString().slice(0, 10)
-  return getAppointments({ doctor_id, date: today })
+export async function getTodaySchedule(_doctor_id?: string): Promise<SecretaryAppointment[]> {
+  const res = await api.get('/secretary/schedule/today')
+  const data = res.data.data ?? []
+  return data.map(mapAppointment)
 }
 
 export async function cancelAppointment(id: number, reason: string): Promise<void> {
@@ -93,7 +116,8 @@ export async function createWalkIn(payload: WalkInPayload) {
 // ─── Patients ─────────────────────────────────────────────────────────────────
 
 export async function getPatients(doctor_id: string, search?: string): Promise<SecretaryPatient[]> {
-  const params: Record<string, string> = { doctor_id }
+  const params: Record<string, string> = {}
+  if (doctor_id) params.doctor_id = doctor_id
   if (search) params.search = search
   const res = await api.get('/patients', { params })
   const data = res.data.data ?? []

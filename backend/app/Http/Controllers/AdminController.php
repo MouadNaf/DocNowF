@@ -111,6 +111,180 @@ class AdminController extends Controller
         return response()->json(['data' => $months]);
     }
 
+    /* ─── PAGINATED USERS LIST ──────────────────────────────────────────── */
+
+    public function getUsersPaginated(Request $request)
+    {
+        $perPage = min((int) $request->get('per_page', 15), 50);
+        $search = $request->get('search');
+        $entityType = $request->get('entity_type');
+
+        $roleMap = [
+            'doctor'          => 'doctor',
+            'clinic'          => 'clinic',
+            'cabinet'         => 'collective_cabinet',
+            'secretary'       => 'secretary',
+            'patient'         => 'patient',
+        ];
+
+        $roles = ['doctor', 'clinic', 'collective_cabinet', 'secretary', 'patient'];
+        if ($entityType && isset($roleMap[$entityType])) {
+            $roles = [$roleMap[$entityType]];
+        }
+
+        $query = User::query()
+            ->whereIn('role', $roles)
+            ->select('id', 'name', 'email', 'role', 'city', 'phone_number', 'created_at')
+            ->with([
+                'doctor' => fn ($q) => $q->select('id', 'user_id', 'speciality', 'is_verified', 'is_active'),
+                'doctor.privateCabinet' => fn ($q) => $q->select('id', 'doctor_id', 'name', 'city', 'address', 'is_active', 'is_verified'),
+                'clinic' => fn ($q) => $q->select('id', 'user_id', 'name', 'speciality', 'address', 'city', 'is_verified', 'is_active'),
+                'collectiveCabinet' => fn ($q) => $q->select('id', 'user_id', 'name', 'speciality', 'address', 'city', 'is_verified', 'is_active'),
+                'secretary' => fn ($q) => $q->select('id', 'user_id'),
+                'patient' => fn ($q) => $q->select('id', 'user_id'),
+            ])
+            ->orderByDesc('created_at');
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhereHas('doctor.privateCabinet', fn ($pc) => $pc->where('name', 'like', "%{$search}%"))
+                    ->orWhereHas('clinic', fn ($c) => $c->where('name', 'like', "%{$search}%"))
+                    ->orWhereHas('collectiveCabinet', fn ($c) => $c->where('name', 'like', "%{$search}%"));
+            });
+        }
+
+        $paginated = $query->paginate($perPage);
+
+        $data = $paginated->getCollection()
+            ->map(fn ($user) => $this->transformUserToEntity($user))
+            ->filter()
+            ->values();
+
+        return response()->json([
+            'success' => true,
+            'data'    => $data,
+            'meta'    => [
+                'current_page' => $paginated->currentPage(),
+                'last_page'    => $paginated->lastPage(),
+                'per_page'     => $paginated->perPage(),
+                'total'        => $paginated->total(),
+            ],
+            'stats'   => $this->getUserListStats(),
+        ]);
+    }
+
+    public function getUserDetail(string $entityType, $id)
+    {
+        $entity = match ($entityType) {
+            'doctor' => Doctor::with(['user', 'privateCabinet'])->find($id),
+            'clinic' => Clinic::with('user')->find($id),
+            'cabinet' => CollectiveCabinet::with('user')->find($id),
+            'secretary' => Secretary::with('user')->find($id),
+            'patient' => Patient::with('user')->find($id),
+            default => null,
+        };
+
+        if (!$entity) {
+            return response()->json(['message' => 'Entity not found'], 404);
+        }
+
+        $mappedType = $entityType === 'cabinet' ? 'cabinet' : $entityType;
+        $payload = match ($entityType) {
+            'doctor' => [
+                'id'              => $entity->id,
+                'entity_type'     => 'doctor',
+                'is_verified'     => $entity->is_verified,
+                'is_active'       => $entity->is_active,
+                'documents'       => $entity->documents,
+                'user'            => $entity->user,
+                'private_cabinet' => $entity->privateCabinet,
+            ],
+            'clinic', 'cabinet' => [
+                'id'          => $entity->id,
+                'entity_type' => $mappedType,
+                'name'        => $entity->name,
+                'address'     => $entity->address,
+                'city'        => $entity->city,
+                'is_verified' => $entity->is_verified,
+                'is_active'   => $entity->is_active,
+                'documents'   => $entity->documents,
+                'user'        => $entity->user,
+            ],
+            'secretary', 'patient' => [
+                'id'          => $entity->id,
+                'entity_type' => $entityType,
+                'user'        => $entity->user,
+            ],
+            default => null,
+        };
+
+        return response()->json(['success' => true, 'data' => $payload]);
+    }
+
+    private function transformUserToEntity(User $user): ?array
+    {
+        $userData = $user->only(['id', 'name', 'email', 'city', 'phone_number']);
+
+        return match ($user->role) {
+            'doctor' => $user->doctor ? [
+                'id'              => $user->doctor->id,
+                'entity_type'     => 'doctor',
+                'is_verified'     => $user->doctor->is_verified,
+                'is_active'       => $user->doctor->is_active,
+                'user'            => $userData,
+                'private_cabinet' => $user->doctor->privateCabinet,
+            ] : null,
+            'clinic' => $user->clinic ? [
+                'id'          => $user->clinic->id,
+                'entity_type' => 'clinic',
+                'name'        => $user->clinic->name,
+                'is_verified' => $user->clinic->is_verified,
+                'is_active'   => $user->clinic->is_active,
+                'user'        => $userData,
+            ] : null,
+            'collective_cabinet' => $user->collectiveCabinet ? [
+                'id'          => $user->collectiveCabinet->id,
+                'entity_type' => 'cabinet',
+                'name'        => $user->collectiveCabinet->name,
+                'is_verified' => $user->collectiveCabinet->is_verified,
+                'is_active'   => $user->collectiveCabinet->is_active,
+                'user'        => $userData,
+            ] : null,
+            'secretary' => $user->secretary ? [
+                'id'          => $user->secretary->id,
+                'entity_type' => 'secretary',
+                'user'        => $userData,
+            ] : null,
+            'patient' => $user->patient ? [
+                'id'          => $user->patient->id,
+                'entity_type' => 'patient',
+                'user'        => $userData,
+            ] : null,
+            default => null,
+        };
+    }
+
+    private function getUserListStats(): array
+    {
+        $total = User::whereIn('role', ['doctor', 'clinic', 'collective_cabinet', 'secretary', 'patient'])->count();
+
+        $pending = Doctor::where('is_verified', false)->count()
+            + Clinic::where('is_verified', false)->count()
+            + CollectiveCabinet::where('is_verified', false)->count();
+
+        $premium = Doctor::where('is_active', true)->count()
+            + Clinic::where('is_active', true)->count()
+            + CollectiveCabinet::where('is_active', true)->count();
+
+        return [
+            'total'   => $total,
+            'pending' => $pending,
+            'premium' => $premium,
+        ];
+    }
+
     /* DOCTORS */
     public function getAllDoctors()
     {

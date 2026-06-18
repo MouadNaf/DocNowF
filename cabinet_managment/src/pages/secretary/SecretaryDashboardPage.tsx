@@ -2,13 +2,15 @@ import { useState } from 'react'
 import { SecretaryLayout } from '@/components/layout/SecretaryLayout'
 import {
   useTodaySchedule,
+  useSecretaryProfile,
   useCancelAppointment,
   useMarkAsArrived,
   useMarkAsNoShow,
-  useMarkAsPaid,
   useSaveNote,
 } from '@/hooks/useSecretary'
+import { useAuthStore } from '@/store/auth.store'
 import { RescheduleModal } from '@/components/secretary/RescheduleModal'
+import { PayAppointmentModal, PaymentStatusBadge } from '@/components/secretary/PayAppointmentModal'
 import type { SecretaryAppointment } from '@/types/secretary'
 
 const STATUS_LABEL: Record<string, string> = {
@@ -29,7 +31,9 @@ const STATUS_COLOR: Record<string, string> = {
 }
 
 export function SecretaryDashboardPage() {
-  const { data: appointments = [], isLoading } = useTodaySchedule()
+  const { data: appointments = [], isLoading, isError, refetch } = useTodaySchedule()
+  const { isFetched: profileReady } = useSecretaryProfile()
+  const user = useAuthStore((s) => s.user)
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [modal, setModal] = useState<'cancel' | 'pay' | 'note' | 'reschedule' | null>(null)
 
@@ -61,8 +65,23 @@ export function SecretaryDashboardPage() {
           </div>
         </div>
 
-        {isLoading ? (
+        {isLoading || !profileReady ? (
           <p className="text-gray-400 text-sm py-12 text-center">Chargement du planning...</p>
+        ) : isError ? (
+          <div className="py-12 text-center border-2 border-dashed border-orange-200 rounded-lg bg-orange-50/50">
+            <p className="text-orange-700 text-sm font-semibold mb-1">Impossible de charger les rendez-vous.</p>
+            <p className="text-orange-600/80 text-xs mb-3">
+              {!user?.doctorId
+                ? 'Votre compte secrétaire n\'est pas lié à un médecin. Demandez à votre médecin de vous ajouter depuis son espace DocNow.'
+                : 'Vérifiez votre connexion et réessayez.'}
+            </p>
+            <button
+              onClick={() => refetch()}
+              className="text-xs font-semibold text-orange-700 underline hover:text-orange-800"
+            >
+              Réessayer
+            </button>
+          </div>
         ) : appointments.length === 0 ? (
           <div className="py-12 text-center border-2 border-dashed rounded-lg">
              <p className="text-gray-400 text-sm">Aucun rendez-vous pour aujourd'hui.</p>
@@ -103,7 +122,7 @@ export function SecretaryDashboardPage() {
         <CancelDialog id={selectedId} onClose={() => setModal(null)} />
       )}
       {modal === 'pay' && selectedApt && (
-        <PayDialog apt={selectedApt} onClose={() => setModal(null)} />
+        <PayAppointmentModal apt={selectedApt} onClose={() => setModal(null)} />
       )}
       {modal === 'note' && selectedApt && (
         <NoteDialog apt={selectedApt} onClose={() => setModal(null)} />
@@ -140,17 +159,7 @@ function AppointmentRow({ a, onAction }: { a: SecretaryAppointment; onAction: (t
         )}
       </td>
       <td className="py-4 px-4">
-        {a.payment_status === 'paid' ? (
-           <div className="flex items-center gap-1 text-green-600 font-medium">
-              <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-              Payé
-           </div>
-        ) : (
-           <div className="flex items-center gap-1 text-red-500 font-medium">
-              <span className="w-1.5 h-1.5 bg-red-400 rounded-full"></span>
-              Non payé
-           </div>
-        )}
+        <PaymentStatusBadge apt={a} />
       </td>
       <td className="py-4 px-4 text-right">
         <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
@@ -164,12 +173,12 @@ function AppointmentRow({ a, onAction }: { a: SecretaryAppointment; onAction: (t
               </button>
             </>
           )}
-          {a.payment_status !== 'paid' && a.status !== 'cancelled' && (
+          {a.remaining_balance > 0 && a.status !== 'cancelled' && (
             <button 
               onClick={() => onAction('pay')}
               className="h-8 px-3 rounded-lg bg-green-50 text-green-600 text-xs font-semibold hover:bg-green-100"
             >
-              Payer
+              {a.payment_status === 'partial' ? 'Compléter' : 'Payer'}
             </button>
           )}
           <button 
@@ -225,59 +234,6 @@ function CancelDialog({ id, onClose }: { id: number; onClose: () => void }) {
             className="flex-1 h-11 text-sm font-bold bg-red-500 text-white rounded-xl hover:bg-red-600 shadow-lg shadow-red-200 transition-all disabled:opacity-50"
           >
             {cancel.isPending ? 'Annulation...' : 'Confirmer'}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function PayDialog({ apt, onClose }: { apt: SecretaryAppointment; onClose: () => void }) {
-  const pay = useMarkAsPaid()
-  const [method, setMethod] = useState('cash')
-  const [amount, setAmount] = useState(apt.fee.toString())
-  const [note, setNote] = useState('')
-
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl p-6 w-[400px] shadow-2xl">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">Enregistrer le paiement</h3>
-        
-        <div className="space-y-4 mb-6">
-          <div>
-            <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Montant (DA)</label>
-            <input 
-               type="number"
-               className="w-full h-11 border-2 border-gray-50 rounded-xl px-4 font-bold text-lg focus:border-green-200 focus:outline-none"
-               value={amount}
-               onChange={e => setAmount(e.target.value)}
-            />
-          </div>
-          
-          <div>
-            <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Mode de paiement</label>
-            <div className="grid grid-cols-2 gap-2">
-              {['cash', 'card', 'ccp', 'virement'].map(m => (
-                <button 
-                  key={m}
-                  onClick={() => setMethod(m)}
-                  className={`h-10 rounded-lg text-xs font-bold border-2 transition-all ${method === m ? 'border-green-500 bg-green-50 text-green-700' : 'border-gray-50 text-gray-400'}`}
-                >
-                  {m.toUpperCase()}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 h-11 text-sm font-bold text-gray-500 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">Annuler</button>
-          <button
-            onClick={() => pay.mutate({ id: apt.id, data: { paymentMethod: method, amount: Number(amount), notes: note } }, { onSuccess: onClose })}
-            disabled={pay.isPending}
-            className="flex-1 h-11 text-sm font-bold bg-green-500 text-white rounded-xl hover:bg-green-600 shadow-lg shadow-green-200 transition-all disabled:opacity-50"
-          >
-            {pay.isPending ? 'Traitement...' : 'Valider'}
           </button>
         </div>
       </div>

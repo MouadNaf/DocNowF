@@ -97,25 +97,14 @@ export const adminService = {
     return res.data;
   },
 
-  async getUsers() {
-    // This will now fetch and combine all professional and user entities
-    const [doctors, clinics, cabinets, privateCabinets, secretaries, patients] = await Promise.all([
-      this.getAllDoctors(),
-      this.getAllClinics(),
-      this.getAllCabinets(),
-      this.getAllPrivateCabinets(),
-      this.getAllSecretaries(),
-      this.getAllPatients()
-    ]);
+  async getUsers(params?: { page?: number; per_page?: number; search?: string; entity_type?: string }) {
+    const res = await api.get('admin/users', { params });
+    return res.data;
+  },
 
-    return [
-      ...doctors.data.map((d: any) => ({ ...d, entity_type: 'doctor' })),
-      ...clinics.data.map((c: any) => ({ ...c, entity_type: 'clinic' })),
-      ...cabinets.data.map((b: any) => ({ ...b, entity_type: 'cabinet' })),
-      ...privateCabinets.data.map((p: any) => ({ ...p, entity_type: 'private_cabinet', user: p.doctor?.user })),
-      ...secretaries.data.map((s: any) => ({ ...s, entity_type: 'secretary' })),
-      ...patients.data.map((p: any) => ({ ...p, entity_type: 'patient' }))
-    ];
+  async getUserDetail(entityType: string, id: number | string) {
+    const res = await api.get(`admin/users/${entityType}/${id}`);
+    return res.data.data;
   },
 
   async getRechargeRequests() {

@@ -1,14 +1,18 @@
 import { Calendar, ClipboardList, Clock, LayoutDashboard, LogOut, Settings, UserPlus, Users, Stethoscope } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { ROUTES } from '@/constants/routes'
-import { MOCK_SECRETARY } from '@/lib/mock/secretary.mock'
+import { useAuthStore } from '@/store/auth.store'
 import { usePreferencesStore } from '@/store/preferences.store'
+import { useSecretaryProfile } from '@/hooks/useSecretary'
 import { t } from '@/lib/i18n'
 
 const amber = '#1D9E75'
 
 export function SecretarySidebar({ onLogout }: { onLogout: () => void }) {
   const language = usePreferencesStore((s) => s.language)
+  const user = useAuthStore((s) => s.user)
+  useSecretaryProfile()
+
   const nav = [
     { to: ROUTES.SECRETARY_DASHBOARD, label: t(language, 'dashboard'), icon: LayoutDashboard },
     { to: ROUTES.SECRETARY_CALENDAR, label: t(language, 'calendar'), icon: Calendar },
@@ -19,7 +23,11 @@ export function SecretarySidebar({ onLogout }: { onLogout: () => void }) {
     { to: ROUTES.SECRETARY_TREATMENTS, label: 'Traitements', icon: Stethoscope },
     { to: ROUTES.SECRETARY_SETTINGS, label: t(language, 'settings'), icon: Settings },
   ]
-  const initials = `${MOCK_SECRETARY.firstName[0]}${MOCK_SECRETARY.lastName[0]}`
+
+  const initials = `${user?.firstName?.[0] ?? '?'}${user?.lastName?.[0] ?? ''}`
+  const doctorName = user?.assignedDoctor?.name
+  const doctorSpeciality = user?.assignedDoctor?.speciality
+
   return (
     <aside className="hidden md:flex w-[220px] bg-white border-r border-gray-200 flex-col">
       <div className="p-4 border-b border-gray-100">
@@ -47,10 +55,18 @@ export function SecretarySidebar({ onLogout }: { onLogout: () => void }) {
           </div>
           <p className="font-bold text-gray-900">DocNow</p>
         </div>
-        <div className="mt-3 rounded-lg p-3 bg-[#E8F7F1]">
-          <p className="text-sm font-semibold">{`Dr. ${MOCK_SECRETARY.assignedDoctor.firstName} ${MOCK_SECRETARY.assignedDoctor.lastName}`}</p>
-          <p className="text-xs text-gray-600">{MOCK_SECRETARY.assignedDoctor.specialization[0]}</p>
-        </div>
+        {doctorName ? (
+          <div className="mt-3 rounded-lg p-3 bg-[#E8F7F1]">
+            <p className="text-sm font-semibold">{doctorName.startsWith('Dr.') ? doctorName : `Dr. ${doctorName}`}</p>
+            {doctorSpeciality && (
+              <p className="text-xs text-gray-600">{doctorSpeciality}</p>
+            )}
+          </div>
+        ) : (
+          <div className="mt-3 rounded-lg p-3 bg-orange-50 border border-orange-100">
+            <p className="text-xs font-medium text-orange-700">Aucun médecin assigné</p>
+          </div>
+        )}
       </div>
       <nav className="p-2 space-y-1 flex-1">
         {nav.map((item) => (
@@ -72,7 +88,7 @@ export function SecretarySidebar({ onLogout }: { onLogout: () => void }) {
         <div className="flex items-center gap-2 mb-3">
           <div className="size-8 rounded-full bg-gray-200 flex items-center justify-center text-xs">{initials}</div>
           <div>
-            <p className="text-sm font-medium">{`${MOCK_SECRETARY.firstName} ${MOCK_SECRETARY.lastName}`}</p>
+            <p className="text-sm font-medium">{`${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim() || 'Secrétaire'}</p>
             <p className="text-xs text-gray-500">{t(language, 'secretary')}</p>
           </div>
         </div>
@@ -83,4 +99,3 @@ export function SecretarySidebar({ onLogout }: { onLogout: () => void }) {
     </aside>
   )
 }
-

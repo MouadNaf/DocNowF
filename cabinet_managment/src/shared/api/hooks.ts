@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getAppointments, getDashboardStats, getPatients, getSchedules, updateAppointmentStatus, getAppointmentDetails, saveConsultation, getPatientHistory, getWallet, getWalletTransactions, getRechargeRequests, getTreatments, getTreatment, createTreatment, deleteTreatment, createTreatmentStep, updateTreatmentStep, deleteTreatmentStep, getWalkInSlots } from './doctor.api';
+import { getAppointments, getDoctorTodayAppointments, getDashboardStats, getPatients, getSchedules, updateAppointmentStatus, getAppointmentDetails, saveConsultation, getPatientHistory, getWallet, getWalletTransactions, getRechargeRequests, getTreatments, getTreatment, createTreatment, deleteTreatment, createTreatmentStep, updateTreatmentStep, deleteTreatmentStep, getWalkInSlots } from './doctor.api';
 import type { Appointment } from '@/entities/appointment';
 import type { Patient } from '@/entities/patient';
 import type { Schedule } from '@/entities/schedule';
@@ -15,15 +15,25 @@ export const useDashboardStats = () => {
     return { data: query.data, loading: query.isLoading, refresh: query.refetch };
 };
 
+export const useTodayAppointments = () => {
+    const query = useQuery({
+        queryKey: ['doctor-today-appointments'],
+        queryFn: getDoctorTodayAppointments,
+        refetchInterval: 30000,
+    });
+    return { appointments: query.data ?? [], loading: query.isLoading, refresh: query.refetch };
+};
+
 export const useAppointments = (filters: { date?: string, patient?: string, status?: string } = {}) => {
     const [appointments, setAppointments] = useState<Appointment[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        getAppointments(filters).then(res => {
-            setAppointments(res);
-            setLoading(false);
-        });
+        setLoading(true);
+        getAppointments(filters)
+            .then(res => setAppointments(res))
+            .catch(() => setAppointments([]))
+            .finally(() => setLoading(false));
     }, [JSON.stringify(filters)]);
 
     const changeStatus = async (id: string, status: Appointment['status']) => {

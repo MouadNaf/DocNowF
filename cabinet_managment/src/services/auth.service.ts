@@ -1,6 +1,44 @@
 import api from '@/lib/api';
 import type { AuthUser, LoginCredentials } from '@/types/auth';
 
+function mapBackendUser(backendUser: any): AuthUser {
+  const nameParts = (backendUser.name || '').split(' ');
+  const firstName = nameParts[0] || '';
+  const lastName = nameParts.slice(1).join(' ') || '';
+  const roleData = backendUser.role_data;
+
+  const hasPrivateCabinet = Boolean(
+    roleData?.private_cabinet ||
+    roleData?.privateCabinet ||
+    roleData?.private_cabinet_id
+  );
+
+  return {
+    id: String(backendUser.id),
+    firstName,
+    lastName,
+    email: backendUser.email,
+    role: backendUser.role,
+    doctorType: hasPrivateCabinet ? 'private_cabinet' : 'doctor_only',
+    status: 'active',
+    isPremium: !!roleData?.is_active,
+    phone_number: backendUser.phone_number,
+    city: backendUser.city,
+    address: backendUser.address,
+    speciality: roleData?.speciality,
+    avatarUrl: backendUser.profile_picture,
+    doctorId: backendUser.role === 'secretary'
+      ? String(roleData?.doctor_id ?? '')
+      : undefined,
+    assignedDoctor: backendUser.role === 'secretary' && roleData?.doctor?.user
+      ? {
+          name: roleData.doctor.user.name,
+          speciality: roleData.doctor.speciality,
+        }
+      : undefined,
+  };
+}
+
 export const authService = {
   async login(credentials: LoginCredentials): Promise<{ user: AuthUser; token: string }> {
     const response = await api.post('/login', {
@@ -9,38 +47,7 @@ export const authService = {
     });
 
     const { user: backendUser, token } = response.data;
-
-    // Split name into first/last for frontend compatibility
-    const nameParts = (backendUser.name || '').split(' ');
-    const firstName = nameParts[0] || '';
-    const lastName = nameParts.slice(1).join(' ') || '';
-
-    const hasPrivateCabinet = Boolean(
-      backendUser.role_data?.private_cabinet ||
-      backendUser.role_data?.privateCabinet ||
-      backendUser.role_data?.private_cabinet_id
-    );
-
-    const user: AuthUser = {
-      id: String(backendUser.id),
-      firstName,
-      lastName,
-      email: backendUser.email,
-      role: backendUser.role,
-      doctorType: hasPrivateCabinet ? 'private_cabinet' : 'doctor_only',
-      status: 'active',
-      isPremium: !!backendUser.role_data?.is_active,
-      phone_number: backendUser.phone_number,
-      city: backendUser.city,
-      address: backendUser.address,
-      speciality: backendUser.role_data?.speciality,
-      // For secretary: store their assigned doctor_id so pages can query the API
-      doctorId: backendUser.role === 'secretary'
-        ? String(backendUser.role_data?.doctor_id ?? '')
-        : undefined,
-    };
-
-    return { user, token };
+    return { user: mapBackendUser(backendUser), token };
   },
 
   async registerDoctor(data: any, files: Record<string, File | null>) {
@@ -120,23 +127,35 @@ export const authService = {
     return response.data;
   },
 
-  async updateProfile(payload: any) {
-    let data = payload;
-    if (payload.profile_picture instanceof File) {
-      data = new FormData();
-      Object.keys(payload).forEach(key => {
-        data.append(key, payload[key]);
+  async updateProfile(payload: any): Promise<{ success: boolean; message: string; user: AuthUser }> {
+    const hasFile = payload.profile_picture instanceof File;
+
+    if (hasFile) {
+      const formData = new FormData();
+      Object.entries(payload).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          formData.append(key, value as string | Blob);
+        }
       });
+      // PHP/Laravel does not parse multipart bodies on PUT — use POST for file uploads.
+      const response = await api.post('/profile', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return {
+        ...response.data,
+        user: mapBackendUser(response.data.user),
+      };
     }
 
-    const response = await api.put('/profile', data, {
-      headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {}
-    });
-    return response.data;
+    const response = await api.put('/profile', payload);
+    return {
+      ...response.data,
+      user: mapBackendUser(response.data.user),
+    };
   },
 
-  async fetchMe() {
+  async fetchMe(): Promise<AuthUser> {
     const response = await api.get('/me');
-    return response.data;
+    return mapBackendUser(response.data);
   }
 };

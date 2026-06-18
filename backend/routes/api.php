@@ -51,6 +51,9 @@ Route::middleware('auth:sanctum')->group(function () {
         $method->setAccessible(true);
         $roleData = $method->invoke($authController, $user);
 
+        $resolvePicture = $reflection->getMethod('resolveProfilePictureUrl');
+        $resolvePicture->setAccessible(true);
+
         return response()->json([
             'id' => $user->id,
             'name' => $user->name,
@@ -61,16 +64,13 @@ Route::middleware('auth:sanctum')->group(function () {
             'gender' => $user->gender,
             'date_of_birth' => $user->date_of_birth,
             'role' => $user->role,
-            'profile_picture' => $user->profile_picture 
-                ? (str_starts_with($user->profile_picture, 'http') 
-                    ? $user->profile_picture 
-                    : asset("storage/{$user->profile_picture}"))
-                : null,
+            'profile_picture' => $resolvePicture->invoke($authController, $user->profile_picture),
             'role_data' => $roleData,
         ]);
     });
 
     Route::put('/profile', [AuthController::class, 'updateProfile']);
+    Route::post('/profile', [AuthController::class, 'updateProfile']);
     Route::post('/upload', [UploadController::class, 'upload']);
 
     /*
@@ -108,6 +108,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/patients/search-by-phone', [DashboardController::class, 'searchByPhone']);
     Route::post('/patients', [DashboardController::class, 'storePatient']);
     Route::get('/appointments', [DashboardController::class, 'appointments']);
+    Route::get('/secretary/schedule/today', [DashboardController::class, 'secretaryTodaySchedule']);
     Route::patch('/appointments/{id}/status', [DashboardController::class, 'updateStatus']);
     Route::patch('/appointments/{id}/note', [DashboardController::class, 'updateNote']);
     Route::post('/appointments/{id}/payment', [DashboardController::class, 'markPaid']);
@@ -201,6 +202,9 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/recent-activity',  [AdminController::class, 'getRecentActivity']);
             Route::get('/user-growth',      [AdminController::class, 'getUserGrowth']);
             Route::get('/revenue-growth',   [AdminController::class, 'getRevenueGrowth']);
+
+            Route::get('/users', [AdminController::class, 'getUsersPaginated']);
+            Route::get('/users/{entityType}/{id}', [AdminController::class, 'getUserDetail']);
 
             Route::get('/doctors', [AdminController::class, 'getAllDoctors']);
             Route::get('/doctors/pending', [AdminController::class, 'getPendingDoctors']);

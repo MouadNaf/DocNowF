@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
-private function resolveProfilePictureUrl(?string $profilePicture): ?string
+public function resolveProfilePictureUrl(?string $profilePicture): ?string
 {
     if (!$profilePicture) {
         return null;
@@ -21,7 +21,9 @@ private function resolveProfilePictureUrl(?string $profilePicture): ?string
         return $profilePicture;
     }
 
-    return asset("storage/{$profilePicture}");
+    $base = request()->getSchemeAndHttpHost() ?: rtrim(config('app.url'), '/');
+
+    return "{$base}/storage/{$profilePicture}";
 }
 
 private function uploadProfilePicture($file): string
@@ -31,7 +33,7 @@ private function uploadProfilePicture($file): string
     $apiSecret = env('CLOUDINARY_API_SECRET');
 
     if (!$cloudName || !$apiKey || !$apiSecret) {
-        throw new \RuntimeException('Cloudinary credentials are missing.');
+        return $file->store('profiles', 'public');
     }
 
     try {
@@ -92,7 +94,9 @@ private function getRoleData(User $user)
         'clinic'             => $user->clinic,
         'collective_cabinet' => $user->collectiveCabinet,
         'patient'            => $user->patient,
-        'secretary'          => $user->secretary,   // ← includes doctor_id, private_cabinet_id, etc.
+        'secretary'          => $user->secretary
+            ? $user->secretary->load('doctor.user')
+            : null,
         default              => null,
     };
 }

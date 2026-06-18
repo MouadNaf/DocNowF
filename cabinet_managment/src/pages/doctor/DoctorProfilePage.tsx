@@ -50,17 +50,7 @@ export function DoctorProfilePage() {
     const init = async () => {
       try {
         const me = await authService.fetchMe();
-        const nameParts = (me.name || '').split(' ');
-        updateUser({
-          ...user!,
-          firstName: nameParts[0] || '',
-          lastName: nameParts.slice(1).join(' ') || '',
-          phone_number: me.phone_number,
-          city: me.city,
-          address: me.address,
-          speciality: me.role_data?.speciality,
-          avatarUrl: me.profile_picture
-        });
+        updateUser(me);
       } catch (e) {
         console.error('Failed to fetch me:', e);
       }
@@ -89,14 +79,11 @@ export function DoctorProfilePage() {
       setIsUploadingAvatar(true);
       setError('');
       const res = await authService.updateProfile({ profile_picture: file });
-      updateUser({
-        ...user!,
-        avatarUrl: res.user.profile_picture
-      });
+      updateUser(res.user);
       setProfileSuccess('Photo de profil mise Ã  jour !');
       setTimeout(() => setProfileSuccess(''), 3000);
     } catch (err: any) {
-      setError('Erreur lors de l\'upload de l\'image');
+      setError(err.response?.data?.message || err.message || 'Erreur lors de l\'upload de l\'image');
     } finally {
       setIsUploadingAvatar(false);
     }
@@ -114,17 +101,8 @@ export function DoctorProfilePage() {
         address: data.address,
         speciality: data.speciality
       });
-      
-      const nameParts = (res.user.name || '').split(' ');
-      updateUser({
-        ...user!,
-        firstName: nameParts[0] || '',
-        lastName: nameParts.slice(1).join(' ') || '',
-        phone_number: res.user.phone_number,
-        city: res.user.city,
-        address: res.user.address,
-        speciality: res.user.role_data?.speciality || data.speciality,
-      });
+
+      updateUser(res.user);
       
       setIsEditingProfile(false);
       setProfileSuccess('Informations mises Ã  jour !');
@@ -147,7 +125,15 @@ export function DoctorProfilePage() {
                 isUploadingAvatar && "opacity-50"
               )}>
                 {user?.avatarUrl ? (
-                  <img src={user.avatarUrl} alt={user?.firstName} className="w-full h-full object-cover" />
+                  <img
+                    key={user.avatarUrl}
+                    src={user.avatarUrl}
+                    alt={user?.firstName}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
                 ) : (
                   <User size={80} className="text-gray-200" />
                 )}
