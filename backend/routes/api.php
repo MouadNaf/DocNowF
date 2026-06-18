@@ -25,6 +25,7 @@ use App\Http\Controllers\SecretaryTreatmentController;
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
+Route::get('/doctors/wilayas', [\App\Http\Controllers\PublicDoctorController::class, 'wilayas']);
 Route::get('/doctors', [\App\Http\Controllers\PublicDoctorController::class, 'index']);
 Route::get('/appointments/slots/{doctorId}/{date}/{cabinetType}/{cabinetId}', [\App\Http\Controllers\AppointmentController::class, 'generateSlots']);
 

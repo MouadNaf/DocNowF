@@ -106,11 +106,14 @@ class ChatService {
 
   const ChatService({required ApiClient apiClient}) : _apiClient = apiClient;
 
-  Future<ChatResponse> sendMessage(String message) async {
+  Future<ChatResponse> sendMessage(String message, {List<Map<String, String>> history = const []}) async {
     try {
       final response = await _apiClient.post(
         '/chat',
-        body: {'message': message},
+        body: {
+          'message': message,
+          'history': history,
+        },
       );
 
       print('Chatbot DEBUG: Status Code: ${response.statusCode}');

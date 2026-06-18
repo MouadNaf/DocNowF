@@ -9,8 +9,69 @@ import '../bloc/search_bloc.dart';
 import '../bloc/search_event.dart';
 import '../bloc/search_state.dart';
 import '../../../doctors/presentation/pages/doctor_details_page.dart';
-
 import '../../../../core/utils/navigation_service.dart';
+
+/// All 58 Algerian wilayas in order.
+const List<String> _allWilayas = [
+  'Adrar',
+  'Chlef',
+  'Laghouat',
+  'Oum El Bouaghi',
+  'Batna',
+  'Béjaïa',
+  'Biskra',
+  'Bechar',
+  'Blida',
+  'Bouira',
+  'Tamanrasset',
+  'Tébessa',
+  'Tlemcen',
+  'Tiaret',
+  'Tizi Ouzou',
+  'Alger',
+  'Djelfa',
+  'Jijel',
+  'Sétif',
+  'Saida',
+  'Skikda',
+  'Sidi Bel Abbes',
+  'Annaba',
+  'Guelma',
+  'Constantine',
+  'Médéa',
+  'Mostaganem',
+  "M'Sila",
+  'Mascara',
+  'Ouargla',
+  'Oran',
+  'El Bayadh',
+  'Illizi',
+  'Bordj Bou Arreridj',
+  'Boumerdès',
+  'El Tarf',
+  'Tindouf',
+  'Tissemsilt',
+  'El Oued',
+  'Khenchela',
+  'Souk Ahras',
+  'Tipaza',
+  'Mila',
+  'Ain Defla',
+  'Naama',
+  'Ain Temouchent',
+  'Ghardaia',
+  'Relizane',
+  'Timimoun',
+  'Bordj Badji Mokhtar',
+  'Ouled Djellal',
+  'Béni Abbès',
+  'In Salah',
+  'In Guezzam',
+  'Touggourt',
+  'Djanet',
+  'El Meghaier',
+  'El Meniaa',
+];
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -22,7 +83,6 @@ class SearchPage extends StatefulWidget {
 class _SearchPageState extends State<SearchPage> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
-  int _currentIndex = 0;
 
   static const List<String> _categories = [
     'All',
@@ -32,7 +92,6 @@ class _SearchPageState extends State<SearchPage> {
     'Pediatrics',
   ];
 
-  // Popular specialties mock — mirrors backend specialities JSON field in Clinic model
   static const List<Map<String, String>> _popularSpecialties = [
     {'name': 'Cardiology', 'count': '3 doctors'},
     {'name': 'Dentist', 'count': '2 doctors'},
@@ -57,12 +116,15 @@ class _SearchPageState extends State<SearchPage> {
           child: BlocBuilder<SearchBloc, SearchState>(
             builder: (context, state) {
               final selectedCategory = _getSelectedCategory(state);
+              final selectedWilaya = _getSelectedWilaya(state);
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildTopBar(context, state),
                   const SizedBox(height: 12),
                   _buildCategoryChips(context, selectedCategory),
+                  const SizedBox(height: 8),
+                  _buildWilayaDropdown(context, selectedWilaya),
                   const SizedBox(height: 8),
                   Expanded(
                     child: _buildBody(context, state),
@@ -88,14 +150,19 @@ class _SearchPageState extends State<SearchPage> {
     return 'All';
   }
 
-  // ── Top Bar ──────────────────────────────────────────────────────────────────
+  String? _getSelectedWilaya(SearchState state) {
+    if (state is SearchInitial) return state.selectedWilaya;
+    if (state is SearchLoaded) return state.selectedWilaya;
+    return null;
+  }
+
+  // ── Top Bar ────────────────────────────────────────────────────────────────
   Widget _buildTopBar(BuildContext context, SearchState state) {
     final hasQuery = _searchController.text.isNotEmpty;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Row(
         children: [
-          // Back button
           GestureDetector(
             onTap: () => Navigator.pop(context),
             child: Container(
@@ -112,11 +179,11 @@ class _SearchPageState extends State<SearchPage> {
                   ),
                 ],
               ),
-              child: const Icon(Icons.arrow_back, color: AppColors.textPrimary, size: 20),
+              child: const Icon(Icons.arrow_back,
+                  color: AppColors.textPrimary, size: 20),
             ),
           ),
           const SizedBox(width: 12),
-          // Search field
           Expanded(
             child: Container(
               decoration: BoxDecoration(
@@ -153,14 +220,13 @@ class _SearchPageState extends State<SearchPage> {
                       ? GestureDetector(
                           onTap: () {
                             _searchController.clear();
-                            context.read<SearchBloc>().add(const SearchQueryChanged(''));
+                            context
+                                .read<SearchBloc>()
+                                .add(const SearchQueryChanged(''));
                             setState(() {});
                           },
-                          child: const Icon(
-                            Icons.close,
-                            color: AppColors.textSecondary,
-                            size: 20,
-                          ),
+                          child: const Icon(Icons.close,
+                              color: AppColors.textSecondary, size: 20),
                         )
                       : null,
                   border: InputBorder.none,
@@ -178,7 +244,7 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  // ── Category Chips ───────────────────────────────────────────────────────────
+  // ── Category Chips ─────────────────────────────────────────────────────────
   Widget _buildCategoryChips(BuildContext context, String selectedCategory) {
     return SizedBox(
       height: 40,
@@ -196,12 +262,14 @@ class _SearchPageState extends State<SearchPage> {
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               margin: const EdgeInsets.only(right: 10),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               decoration: BoxDecoration(
                 color: isSelected ? AppColors.primary : Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: isSelected ? AppColors.primary : AppColors.border,
+                  color:
+                      isSelected ? AppColors.primary : AppColors.border,
                 ),
                 boxShadow: isSelected
                     ? [
@@ -217,7 +285,8 @@ class _SearchPageState extends State<SearchPage> {
                 cat,
                 style: TextStyle(
                   color: isSelected ? Colors.white : AppColors.textPrimary,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  fontWeight:
+                      isSelected ? FontWeight.w600 : FontWeight.w500,
                   fontSize: 13,
                 ),
               ),
@@ -228,7 +297,125 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  // ── Body (switches between initial / results) ────────────────────────────────
+  // ── Wilaya Dropdown ────────────────────────────────────────────────────────
+  Widget _buildWilayaDropdown(BuildContext context, String? selectedWilaya) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: selectedWilaya != null
+                ? AppColors.primary
+                : Colors.grey.shade300,
+            width: selectedWilaya != null ? 1.5 : 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.location_on_rounded,
+              size: 20,
+              color: selectedWilaya != null
+                  ? AppColors.primary
+                  : AppColors.textSecondary,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: selectedWilaya,
+                  hint: const Text(
+                    'Filter by Wilaya',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  isExpanded: true,
+                  icon: Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: selectedWilaya != null
+                        ? AppColors.primary
+                        : AppColors.textSecondary,
+                  ),
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  dropdownColor: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  menuMaxHeight: 350,
+                  items: _allWilayas.map((w) {
+                    return DropdownMenuItem<String>(
+                      value: w,
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.place_rounded,
+                            size: 16,
+                            color: w == selectedWilaya
+                                ? AppColors.primary
+                                : AppColors.textSecondary,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            w,
+                            style: TextStyle(
+                              fontWeight: w == selectedWilaya
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              color: w == selectedWilaya
+                                  ? AppColors.primary
+                                  : AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    context
+                        .read<SearchBloc>()
+                        .add(SearchWilayaChanged(value));
+                  },
+                ),
+              ),
+            ),
+            if (selectedWilaya != null)
+              GestureDetector(
+                onTap: () {
+                  context
+                      .read<SearchBloc>()
+                      .add(const SearchWilayaChanged(null));
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.close, size: 16, color: Colors.red),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Body ───────────────────────────────────────────────────────────────────
   Widget _buildBody(BuildContext context, SearchState state) {
     if (state is SearchLoading) {
       return const Center(
@@ -240,7 +427,6 @@ class _SearchPageState extends State<SearchPage> {
       return _buildResults(context, state);
     }
 
-    // SearchInitial
     if (state is SearchInitial) {
       return _buildInitialContent(context, state);
     }
@@ -248,14 +434,13 @@ class _SearchPageState extends State<SearchPage> {
     return const SizedBox.shrink();
   }
 
-  // ── Initial: Recent Searches + Popular Specialties ───────────────────────────
+  // ── Initial Content ────────────────────────────────────────────────────────
   Widget _buildInitialContent(BuildContext context, SearchInitial state) {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Recent Searches
           if (state.recentSearches.isNotEmpty) ...[
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -269,7 +454,9 @@ class _SearchPageState extends State<SearchPage> {
                   ),
                 ),
                 GestureDetector(
-                  onTap: () => context.read<SearchBloc>().add(ClearAllRecentSearches()),
+                  onTap: () => context
+                      .read<SearchBloc>()
+                      .add(ClearAllRecentSearches()),
                   child: const Text(
                     'Clear All',
                     style: TextStyle(
@@ -287,8 +474,6 @@ class _SearchPageState extends State<SearchPage> {
             ),
             const SizedBox(height: 24),
           ],
-
-          // Popular Specialties
           const Text(
             'Popular Specialties',
             style: TextStyle(
@@ -302,7 +487,10 @@ class _SearchPageState extends State<SearchPage> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: MediaQuery.of(context).orientation == Orientation.landscape ? 4 : 2,
+              crossAxisCount:
+                  MediaQuery.of(context).orientation == Orientation.landscape
+                      ? 4
+                      : 2,
               mainAxisSpacing: 12,
               crossAxisSpacing: 12,
               childAspectRatio: 2.5,
@@ -402,15 +590,17 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  // ── Results ──────────────────────────────────────────────────────────────────
+  // ── Results ────────────────────────────────────────────────────────────────
   Widget _buildResults(BuildContext context, SearchLoaded state) {
+    final wilayaLabel =
+        state.selectedWilaya != null ? ' in ${state.selectedWilaya}' : '';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
           child: Text(
-            '${state.doctors.length} results found',
+            '${state.doctors.length} result${state.doctors.length == 1 ? '' : 's'} found$wilayaLabel',
             style: const TextStyle(
               color: AppColors.textSecondary,
               fontSize: 14,
@@ -420,7 +610,7 @@ class _SearchPageState extends State<SearchPage> {
         ),
         Expanded(
           child: state.doctors.isEmpty
-              ? _buildNoResults()
+              ? _buildNoResults(state.selectedWilaya)
               : ListView.builder(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                   itemCount: state.doctors.length,
@@ -432,7 +622,7 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  Widget _buildNoResults() {
+  Widget _buildNoResults(String? wilaya) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -440,9 +630,11 @@ class _SearchPageState extends State<SearchPage> {
           Icon(Icons.search_off_rounded,
               size: 64, color: AppColors.textSecondary.withOpacity(0.5)),
           const SizedBox(height: 16),
-          const Text(
-            'No doctors found',
-            style: TextStyle(
+          Text(
+            wilaya != null
+                ? 'No doctors found in $wilaya'
+                : 'No doctors found',
+            style: const TextStyle(
               color: AppColors.textSecondary,
               fontSize: 16,
               fontWeight: FontWeight.w500,
@@ -451,7 +643,8 @@ class _SearchPageState extends State<SearchPage> {
           const SizedBox(height: 6),
           const Text(
             'Try different keywords or filters',
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+            style:
+                TextStyle(color: AppColors.textSecondary, fontSize: 13),
           ),
         ],
       ),
@@ -484,7 +677,6 @@ class _SearchPageState extends State<SearchPage> {
         ),
         child: Row(
           children: [
-            // Avatar + online dot
             Stack(
               children: [
                 ClipRRect(
@@ -498,13 +690,15 @@ class _SearchPageState extends State<SearchPage> {
                       width: 78,
                       height: 78,
                       color: AppColors.primaryLight,
-                      child: const Icon(Icons.person, color: AppColors.primary),
+                      child:
+                          const Icon(Icons.person, color: AppColors.primary),
                     ),
                     errorWidget: (context, url, error) => Container(
                       width: 78,
                       height: 78,
                       color: AppColors.primaryLight,
-                      child: const Icon(Icons.person, color: AppColors.primary),
+                      child:
+                          const Icon(Icons.person, color: AppColors.primary),
                     ),
                   ),
                 ),
@@ -545,7 +739,25 @@ class _SearchPageState extends State<SearchPage> {
                       fontSize: 13,
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 6),
+                  if (doctor.city.isNotEmpty)
+                    Row(
+                      children: [
+                        Icon(Icons.business_rounded,
+                            size: 13,
+                            color: AppColors.primary.withOpacity(0.7)),
+                        const SizedBox(width: 3),
+                        Text(
+                          doctor.city,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.primary.withOpacity(0.85),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  const SizedBox(height: 6),
                   Row(
                     children: [
                       Icon(Icons.location_on_outlined,
@@ -560,7 +772,7 @@ class _SearchPageState extends State<SearchPage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
                   Row(
                     children: [
                       Text(
@@ -573,7 +785,9 @@ class _SearchPageState extends State<SearchPage> {
                       ),
                       const Spacer(),
                       Text(
-                        doctor.isActive ? 'Available Today' : 'Available Tomorrow',
+                        doctor.isActive
+                            ? 'Available Today'
+                            : 'Available Tomorrow',
                         style: TextStyle(
                           color: doctor.isActive
                               ? AppColors.primary

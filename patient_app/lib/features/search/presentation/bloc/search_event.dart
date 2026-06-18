@@ -23,6 +23,14 @@ class SearchCategoryChanged extends SearchEvent {
   List<Object> get props => [category];
 }
 
+class SearchWilayaChanged extends SearchEvent {
+  final String? wilaya;
+  const SearchWilayaChanged(this.wilaya);
+
+  @override
+  List<Object> get props => [wilaya ?? ''];
+}
+
 class ClearRecentSearch extends SearchEvent {
   final String term;
   const ClearRecentSearch(this.term);

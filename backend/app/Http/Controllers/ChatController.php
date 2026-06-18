@@ -19,10 +19,15 @@ class ChatController extends Controller
     // ─────────────────────────────────────────────────────────────
     public function chat(Request $request)
     {
-        $request->validate(['message' => 'required|string|max:1000']);
+        $request->validate([
+            'message' => 'required|string|max:1000',
+            'history' => 'nullable|array',
+        ]);
+
+        $history = $request->input('history', []);
 
         $today  = Carbon::now('Africa/Algiers')->toDateString();
-        $intent = $this->gemini->getIntent($request->message, $today);
+        $intent = $this->gemini->getIntent($request->message, $today, $history);
 
         // 🔹 SILENT FALLBACK: If Gemini fails (quota limit), use local engine without showing error
         if (isset($intent['error'])) {
@@ -31,14 +36,24 @@ class ChatController extends Controller
         }
 
         return match ($intent['intent'] ?? 'faq') {
-            'search_doctor'      => $this->handleSearchDoctor($intent),
-            'check_availability' => $this->handleCheckAvailability($intent),
-            'book_appointment'   => $this->handleBookAppointment($intent, $request),
-            'view_appointments'  => $this->handleViewAppointments(),
-            'cancel_appointment' => $this->handleCancelAppointment($intent),
-            'symptom_guidance'   => $this->handleSymptomGuidance($intent),
-            default              => $this->handleFaq($intent),
+            'search_doctor'        => $this->handleSearchDoctor($intent),
+            'check_availability'   => $this->handleCheckAvailability($intent),
+            'book_appointment'     => $this->handleBookAppointment($intent, $request),
+            'view_appointments'    => $this->handleViewAppointments(),
+            'cancel_appointment'   => $this->handleCancelAppointment($intent),
+            'symptom_guidance'     => $this->handleSymptomGuidance($intent),
+            'clarification_needed' => $this->handleClarification($intent),
+            default                => $this->handleFaq($intent),
         };
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // 0. CLARIFICATION NEEDED
+    // ─────────────────────────────────────────────────────────────
+    private function handleClarification(array $intent)
+    {
+        $question = $intent['question'] ?? "I didn't quite catch that. Could you clarify what you're looking for?";
+        return $this->respond($question, 'text', [], true);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -58,7 +73,7 @@ class ChatController extends Controller
                 $q->where('name', 'like', '%' . $name . '%');
             });
         } 
-        // 🔹 Priority 2: Search by specialty and city
+        // 🔹 Priority 2: Search by specialty, city, and gender
         else {
             if (!empty($intent['specialty'])) {
                 $query->where('speciality', 'like', '%' . $intent['specialty'] . '%');
@@ -68,6 +83,16 @@ class ChatController extends Controller
                     $q->where('city', 'like', '%' . $intent['city'] . '%');
                 });
             }
+            if (!empty($intent['gender'])) {
+                $gender = strtolower($intent['gender']);
+                if (in_array($gender, ['male', 'female'])) {
+                    $query->whereHas('user', function ($q) use ($gender) {
+                        $q->where('gender', $gender);
+                    });
+                }
+            }
+            // Note: Experience is currently hardcoded to "10 years" in the return format
+            // so we don't query it from DB unless there's an actual column.
         }
 
         $doctors = $query->limit(5)->get();

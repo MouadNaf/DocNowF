@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use App\Services\NotificationService;
 
 class TreatmentController extends Controller
 {
@@ -94,6 +95,9 @@ class TreatmentController extends Controller
         ]);
 
         $treatment->load(['patient.user', 'doctor.user', 'steps']);
+
+        // Notify patient of new treatment
+        NotificationService::treatmentCreated($treatment);
 
         return response()->json([
             'success' => true,
@@ -389,6 +393,9 @@ class TreatmentController extends Controller
                 'consultation_fee' => $fee,
             ]);
 
+            // Notify patient of confirmed appointment
+            NotificationService::appointmentBooked($cancelledAppointment);
+
             return (int) $cancelledAppointment->id;
         }
 
@@ -404,6 +411,9 @@ class TreatmentController extends Controller
                     ...$locationData,
                 ]);
             });
+
+            // Notify patient of confirmed appointment
+            NotificationService::appointmentBooked($appointment);
 
             return (int) $appointment->id;
         } catch (\Illuminate\Database\QueryException) {
@@ -429,6 +439,9 @@ class TreatmentController extends Controller
                 'status' => 'cancelled',
                 'cancellation_reason' => 'Treatment step removed or rescheduled',
             ]);
+
+            // Notify patient that treatment step/appointment is cancelled
+            NotificationService::appointmentCancelled($appointment, 'Étape de traitement modifiée ou supprimée');
         }
     }
 

@@ -11,6 +11,7 @@ abstract class SearchState extends Equatable {
 class SearchInitial extends SearchState {
   final List<String> recentSearches;
   final String selectedCategory;
+  final String? selectedWilaya;
 
   const SearchInitial({
     this.recentSearches = const [
@@ -20,18 +21,23 @@ class SearchInitial extends SearchState {
       'Dentist available today',
     ],
     this.selectedCategory = 'All',
+    this.selectedWilaya,
   });
 
   @override
-  List<Object> get props => [recentSearches, selectedCategory];
+  List<Object> get props =>
+      [recentSearches, selectedCategory, selectedWilaya ?? ''];
 
   SearchInitial copyWith({
     List<String>? recentSearches,
     String? selectedCategory,
+    String? selectedWilaya,
+    bool clearWilaya = false,
   }) {
     return SearchInitial(
       recentSearches: recentSearches ?? this.recentSearches,
       selectedCategory: selectedCategory ?? this.selectedCategory,
+      selectedWilaya: clearWilaya ? null : (selectedWilaya ?? this.selectedWilaya),
     );
   }
 }
@@ -42,25 +48,32 @@ class SearchLoaded extends SearchState {
   final List<Doctor> doctors;
   final String query;
   final String selectedCategory;
+  final String? selectedWilaya;
 
   const SearchLoaded({
     required this.doctors,
     required this.query,
     this.selectedCategory = 'All',
+    this.selectedWilaya,
   });
 
   @override
-  List<Object> get props => [doctors, query, selectedCategory];
+  List<Object> get props =>
+      [doctors, query, selectedCategory, selectedWilaya ?? ''];
 
   SearchLoaded copyWith({
     List<Doctor>? doctors,
     String? query,
     String? selectedCategory,
+    String? selectedWilaya,
+    bool clearWilaya = false,
   }) {
     return SearchLoaded(
       doctors: doctors ?? this.doctors,
       query: query ?? this.query,
       selectedCategory: selectedCategory ?? this.selectedCategory,
+      selectedWilaya:
+          clearWilaya ? null : (selectedWilaya ?? this.selectedWilaya),
     );
   }
 }

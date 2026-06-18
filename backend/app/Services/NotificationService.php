@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Notification;
 use App\Models\Appointment;
 use App\Models\User;
+use App\Models\Treatment;
 
 class NotificationService
 {
@@ -13,14 +14,18 @@ class NotificationService
      */
     public static function send(int $userId, string $title, string $message, string $type, array $data = []): void
     {
-        Notification::create([
-            'user_id' => $userId,
-            'title'   => $title,
-            'message' => $message,
-            'type'    => $type,
-            'data'    => $data,
-            'is_read' => false,
-        ]);
+        try {
+            Notification::create([
+                'user_id' => $userId,
+                'title'   => $title,
+                'message' => $message,
+                'type'    => $type,
+                'data'    => $data,
+                'is_read' => false,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error("Failed to send notification to user {$userId}: " . $e->getMessage());
+        }
     }
 
     /**
@@ -206,6 +211,26 @@ class NotificationService
                     " a été replanifié pour le {$dateFormatted} à {$time}{$oldText}.",
                 'appointment',
                 ['appointment_id' => $appointment->id]
+            );
+        }
+    }
+
+    /**
+     * Notify patient when a new treatment is created.
+     */
+    public static function treatmentCreated(Treatment $treatment): void
+    {
+        $treatment->load(['patient.user', 'doctor.user']);
+        $patient = $treatment->patient;
+        $doctor = $treatment->doctor;
+
+        if ($patient?->user && $doctor?->user) {
+            self::send(
+                $patient->user->id,
+                'Nouveau traitement',
+                "Dr. {$doctor->user->name} vous a assigné un nouveau traitement : {$treatment->title}.",
+                'system',
+                ['treatment_id' => $treatment->id]
             );
         }
     }

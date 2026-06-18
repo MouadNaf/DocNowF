@@ -21,23 +21,38 @@ class GeminiService
      *
      * @param  string  $userMessage
      * @param  string  $today        ISO date "YYYY-MM-DD"
+     * @param  array   $history      Array of previous messages [{'role': 'user'|'model', 'text': '...'}]
      * @return array   Decoded JSON intent array
      */
-    public function getIntent(string $userMessage, string $today): array
+    public function getIntent(string $userMessage, string $today, array $history = []): array
     {
         Log::info('Chatbot: Incoming message', ['message' => $userMessage]);
 
         $systemPrompt = $this->buildSystemPrompt($today);
 
+        // Map history to Gemini's format
+        $contents = [];
+        foreach ($history as $msg) {
+            $role = $msg['role'] === 'model' ? 'model' : 'user';
+            $contents[] = [
+                'role' => $role,
+                'parts' => [['text' => $msg['text']]],
+            ];
+        }
+        
+        // Add current message
+        $contents[] = [
+            'role' => 'user',
+            'parts' => [['text' => $userMessage]],
+        ];
+
         $payload = [
-            'contents' => [
-                [
-                    'role' => 'user',
-                    'parts' => [
-                        ['text' => $systemPrompt . "\n\nUser message: " . $userMessage],
-                    ],
-                ],
+            'systemInstruction' => [
+                'parts' => [
+                    ['text' => $systemPrompt]
+                ]
             ],
+            'contents' => $contents,
             'generationConfig' => [
                 'temperature'     => 0.1,
                 'maxOutputTokens' => 1024,
@@ -99,40 +114,63 @@ class GeminiService
     private function buildSystemPrompt(string $today): string
     {
         return <<<PROMPT
-You are "DocNow AI Assistant". Your job is to extract medical intents from user messages.
+You are "DocNow AI Assistant", a medical receptionist chatbot for a patient application.
 Today's date is {$today}.
 
-RULES:
-1. Return ONLY raw JSON. NO markdown. NO explanation.
-2. Understand natural language freely — users may say things in any way.
-3. If the user mentions symptoms (e.g. "I have chest pain"), use "symptom_guidance".
-4. NEVER diagnose a disease. NEVER prescribe medicine.
-5. For symptoms, suggest a doctor specialty and recommend consultation.
-6. Extract doctor names even if written informally (e.g. "dr aymen", "ayoub", "the doctor named aymen").
-7. Extract times in any format: "at 10", "10am", "at 10:30", "half past 9" → HH:MM 24h.
-8. Understand date expressions: "today", "tomorrow", "next monday", "this saturday", etc.
-9. Understand cancellation even if user says "remove", "delete", "I don't want the appointment".
-10. Understand booking even if user says "schedule", "reserve", "make an appointment", "I want to see a doctor".
+CRITICAL RULES:
+1. Return ONLY valid JSON. NO markdown format, NO conversational text outside JSON.
+2. DATABASE-ONLY KNOWLEDGE: You MUST ONLY use information extracted from the conversation or the user's explicit request. NEVER invent doctors, specialties, locations, prices, availability, or appointments.
+3. CONVERSATION CONTEXT: Use the chat history to resolve pronouns or ambiguous requests. For example, if the user previously asked for "cardiologists" and now says "is the second one free tomorrow?", you must infer they want to check availability for the second cardiologist from the previous list.
+4. NATURAL LANGUAGE UNDERSTANDING: Understand various ways a user expresses a need (e.g., "I need a heart doctor", "Find me a cardiologist", "I have chest problems, who should I see?" all imply searching for a cardiologist).
+5. MEDICAL LIMITATION: NEVER provide medical diagnosis or prescribe medicine. If they ask about symptoms, guide them to a specialty using the `symptom_guidance` intent. Do not replace a real doctor.
+6. CLARIFICATION: If the user's request is too ambiguous, missing critical information, or impossible to parse into a clear intent, use the `clarification_needed` intent to ask a helpful follow-up question. (e.g. User: "I need help with my stomach" -> Bot: "Are you looking for a gastroenterologist? I can help you find one.")
 
-SUPPORTED INTENTS:
+SUPPORTED INTENTS & JSON SCHEMAS:
 
-- search_doctor:       {"intent": "search_doctor",       "specialty": "string|null", "doctor_name": "string|null", "city": "string|null"}
-- check_availability:  {"intent": "check_availability",  "doctor_name": "string|null", "date": "YYYY-MM-DD|null"}
-- book_appointment:    {"intent": "book_appointment",    "doctor_name": "string|null", "date": "YYYY-MM-DD|null", "time": "HH:MM|null"}
-- view_appointments:   {"intent": "view_appointments"}
-- cancel_appointment:  {"intent": "cancel_appointment",  "appointment_id": "integer|null"}
-- symptom_guidance:    {"intent": "symptom_guidance",    "symptoms": "string", "recommended_specialty": "string"}
-- faq:                 {"intent": "faq", "question": "string"}
+- search_doctor
+  Use when the user wants to find, list, or search for doctors. Extract as many filters as possible.
+  {"intent": "search_doctor", "specialty": "string|null", "doctor_name": "string|null", "city": "string|null", "gender": "male|female|null", "experience": "string|null"}
+
+- check_availability
+  Use when the user specifically asks if a doctor is free, available, or asks for their schedule.
+  {"intent": "check_availability", "doctor_name": "string|null", "date": "YYYY-MM-DD|null"}
+
+- book_appointment
+  Use when the user explicitly wants to book, reserve, or schedule an appointment. Extract time in HH:MM format if mentioned.
+  {"intent": "book_appointment", "doctor_name": "string|null", "date": "YYYY-MM-DD|null", "time": "HH:MM|null"}
+
+- view_appointments
+  Use when the user wants to see their existing/upcoming appointments.
+  {"intent": "view_appointments"}
+
+- cancel_appointment
+  Use when the user wants to cancel, remove, or delete an appointment.
+  {"intent": "cancel_appointment", "appointment_id": "integer|null"}
+
+- symptom_guidance
+  Use when the user describes symptoms but doesn't explicitly ask for a doctor search, to recommend a specialty.
+  {"intent": "symptom_guidance", "symptoms": "string", "recommended_specialty": "string"}
+
+- clarification_needed
+  Use when the request is unclear, or you need more info to proceed. Provide a friendly, helpful question.
+  {"intent": "clarification_needed", "question": "string"}
+
+- faq
+  Use for general questions about clinic hours, prices, policies.
+  {"intent": "faq", "question": "string"}
 
 EXAMPLES:
-- "book with aymen tomorrow at 10" → book_appointment, doctor_name: "aymen", date: tomorrow, time: "10:00"
-- "I wanna see a doctor" → search_doctor
-- "cancel it" → cancel_appointment
-- "show me my visits" → view_appointments
-- "is dr ayoub free on friday?" → check_availability, doctor_name: "ayoub"
-- "I have headache and fever" → symptom_guidance
+User: "book with aymen tomorrow at 10"
+{"intent": "book_appointment", "doctor_name": "aymen", "date": "tomorrow's actual date", "time": "10:00"}
+
+User: "Find me a female skin doctor in Oran with 5 years experience"
+{"intent": "search_doctor", "specialty": "dermatology", "city": "Oran", "gender": "female", "experience": "5 years"}
+
+User: "I have a headache"
+{"intent": "clarification_needed", "question": "I'm sorry to hear that. Are you looking for a neurologist or general practitioner to help with your headache?"}
 PROMPT;
     }
+
 
     /**
      * Smart NLP local fallback - mirrors ChatController logic.

@@ -88,7 +88,17 @@ class _ChatbotPageState extends State<ChatbotPage> {
     _controller.clear();
     _scrollToBottom();
 
-    final response = await _chatService.sendMessage(text);
+    // Prepare conversation history (last 10 messages, skip the welcome message)
+    final history = _messages
+        .where((m) => m != _messages.first) // skip welcome message
+        .take(10) // taking last 10
+        .map((m) => {
+              'role': m.isBot ? 'model' : 'user',
+              'text': m.text,
+            })
+        .toList();
+
+    final response = await _chatService.sendMessage(text, history: history);
 
     setState(() {
       _isLoading = false;
