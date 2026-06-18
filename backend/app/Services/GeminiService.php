@@ -136,7 +136,7 @@ SUPPORTED INTENTS & JSON SCHEMAS:
   {"intent": "check_availability", "doctor_name": "string|null", "date": "YYYY-MM-DD|null"}
 
 - book_appointment
-  Use when the user explicitly wants to book, reserve, or schedule an appointment. Extract time in HH:MM format if mentioned.
+  Use when the user explicitly wants to book, reserve, or schedule an appointment. Do NOT treat the word "appointment", "doctor", or "visit" as a doctor name.
   {"intent": "book_appointment", "doctor_name": "string|null", "date": "YYYY-MM-DD|null", "time": "HH:MM|null"}
 
 - view_appointments
@@ -160,6 +160,9 @@ SUPPORTED INTENTS & JSON SCHEMAS:
   {"intent": "faq", "question": "string"}
 
 EXAMPLES:
+User: "I wanna book appointment"
+{"intent": "book_appointment", "doctor_name": null, "date": null, "time": null}
+
 User: "book with aymen tomorrow at 10"
 {"intent": "book_appointment", "doctor_name": "aymen", "date": "tomorrow's actual date", "time": "10:00"}
 

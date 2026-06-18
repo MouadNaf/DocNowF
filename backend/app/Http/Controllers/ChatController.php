@@ -29,12 +29,6 @@ class ChatController extends Controller
         $today  = Carbon::now('Africa/Algiers')->toDateString();
         $intent = $this->gemini->getIntent($request->message, $today, $history);
 
-        // 🔹 SILENT FALLBACK: If Gemini fails (quota limit), use local engine without showing error
-        if (isset($intent['error'])) {
-            Log::warning("Chatbot: Gemini error ({$intent['error']}), using silent local fallback");
-            $intent = $this->localFallbackIntent($request->message, $today);
-        }
-
         return match ($intent['intent'] ?? 'faq') {
             'search_doctor'        => $this->handleSearchDoctor($intent),
             'check_availability'   => $this->handleCheckAvailability($intent),
@@ -171,7 +165,7 @@ class ChatController extends Controller
         }
 
         if (empty($intent['doctor_name'])) {
-            return $this->respond('Which doctor would you like to book with?', 'text', []);
+            return $this->respond('Sure, I can help you book an appointment. Which specialty or doctor would you like?', 'text', []);
         }
 
         $doctorName = trim($intent['doctor_name'] ?? '');
