@@ -136,7 +136,7 @@ SUPPORTED INTENTS & JSON SCHEMAS:
   {"intent": "check_availability", "doctor_name": "string|null", "date": "YYYY-MM-DD|null"}
 
 - book_appointment
-  Use when the user explicitly wants to book, reserve, or schedule an appointment. Do NOT treat the word "appointment", "doctor", or "visit" as a doctor name.
+  Use when the user explicitly wants to book, reserve, or schedule an appointment. Do NOT treat words like "appointment", "appointement", "rendez-vous", "rdv", "visit", "consultation", or "doctor" as a doctor name. If no clear person name is provided, leave doctor_name as null.
   {"intent": "book_appointment", "doctor_name": "string|null", "date": "YYYY-MM-DD|null", "time": "HH:MM|null"}
 
 - view_appointments
@@ -144,7 +144,7 @@ SUPPORTED INTENTS & JSON SCHEMAS:
   {"intent": "view_appointments"}
 
 - cancel_appointment
-  Use when the user wants to cancel, remove, or delete an appointment.
+  Use when the user wants to cancel, remove, or delete an appointment. If the user refers to an appointment displayed in the history data (e.g., "the first one", "with Dr. Aymen"), extract the exact "id" from that JSON data.
   {"intent": "cancel_appointment", "appointment_id": "integer|null"}
 
 - symptom_guidance

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/utils/colors.dart';
@@ -92,10 +93,16 @@ class _ChatbotPageState extends State<ChatbotPage> {
     final history = _messages
         .where((m) => m != _messages.first) // skip welcome message
         .take(10) // taking last 10
-        .map((m) => {
-              'role': m.isBot ? 'model' : 'user',
-              'text': m.text,
-            })
+        .map((m) {
+          String fullText = m.text;
+          if (m.data.isNotEmpty) {
+            fullText += "\n[System Context - Data presented to user:]\n" + jsonEncode(m.data);
+          }
+          return {
+            'role': m.isBot ? 'model' : 'user',
+            'text': fullText,
+          };
+        })
         .toList();
 
     final response = await _chatService.sendMessage(text, history: history);

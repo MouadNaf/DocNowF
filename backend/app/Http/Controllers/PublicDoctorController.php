@@ -76,8 +76,8 @@ class PublicDoctorController extends Controller
                     'experience'      => '10 years',
                     'patients'        => '500+',
                     'fee'             => $doctor->privateCabinet->consultation_price
-                        ? '$' . $doctor->privateCabinet->consultation_price
-                        : '$50',
+                        ? 'dz' . $doctor->privateCabinet->consultation_price
+                        : 'dz50',
                     'about'           => $doctor->privateCabinet->bio ?? 'No bio available.',
                     'hospital'        => $doctor->privateCabinet->name,
                     'cabinet_id'      => (string) $doctor->privateCabinet->id,
